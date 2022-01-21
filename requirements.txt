@@ -9,6 +9,6 @@ scikit-learn
 dash
 dash_bootstrap_components
 dash_bootstrap_templates
-plotly
+plotly==5.5.0
 json
 requests
