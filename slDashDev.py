@@ -180,13 +180,13 @@ def addTickersToGroup(newTickerString,curTickerStrings,curTickerData,apiKey):
 	return curTickerStrings, curTickerData
 
 def calculateTechMetrics(dataDict,inputGrp,binWidth):
-	print(np.shape(currentData))
+	
 	print('metric debug:{}'.format(inputGrp))
 
 	# often the macroData set may not match dimensions of dataSet from group
 	macroData = dataDict['macroDefault'][1]
 	currentData = dataDict[inputGrp][1]
-
+	print(np.shape(currentData))
 	currentData = currentData.loc[macroData.index]
 
 	if np.shape(macroData)[0]>np.shape(currentData)[0]:
