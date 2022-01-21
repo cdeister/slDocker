@@ -180,7 +180,7 @@ def addTickersToGroup(newTickerString,curTickerStrings,curTickerData,apiKey):
 	return curTickerStrings, curTickerData
 
 def calculateTechMetrics(dataDict,inputGrp,binWidth):
-
+	print(np.shape(currentData))
 	print('metric debug:{}'.format(inputGrp))
 
 	# often the macroData set may not match dimensions of dataSet from group
