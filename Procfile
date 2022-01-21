@@ -1,1 +1,1 @@
-web:python slDashDev.py
+web: gunicorn slDashDev:server
