@@ -75,7 +75,7 @@ import datetime
 app = dash.Dash(external_stylesheets=[dbc.themes.SLATE])
 
 load_figure_template("slate")
-# server = app.server
+server = app.server
 # sl banner https://app.stocklabs.com/img/logo.svg
 
 ################################

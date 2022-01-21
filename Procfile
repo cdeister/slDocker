@@ -1,1 +1,1 @@
-web:gunicorn app:sldashdev
+web:gunicorn app:server
