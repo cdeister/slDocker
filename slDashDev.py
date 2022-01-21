@@ -323,7 +323,9 @@ def scoreTechMetrics(dataDict,inpGrp,binWidth):
 	techmetric_smRSIStr = addProcedureToTickerList(cTickers,'_rsiSmooth')
 	techmetric_accDistStr = addProcedureToTickerList(cTickers,'_adSmooth')
 	techmetric_betaStr = addProcedureToTickerList(cTickers,'_beta')
+	print('got through stings ')
 	aggStrings = addProcedureToTickerList(cTickers,'_aggTech')
+	print('got through stings ')
 
 
 	pScores=dataDict[inpGrp][1][techmetric_priceStr].copy()
