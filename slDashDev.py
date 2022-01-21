@@ -111,7 +111,7 @@ def thresholdByQunatiles(data):
 	return anUpEvs,anDwnEvs
 
 def getTickerDataFromSL(ticker,apiKey):
-	response = requests.get('https://api.stocklabs.com/chart_ticks?symbol={}&type=symbol&resolution=1&from=open&api_key='.format(ticker) + '{}'.format(apiKey))
+	response = requests.get('https://api.stocklabs.com/chart_ticks?symbol={}&type=symbol&resolution=1&from=market_open&api_key='.format(ticker) + '{}'.format(apiKey))
 	aa=response.json()['data']['bars']
 
 	# aa[0].keys()
