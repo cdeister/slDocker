@@ -67,7 +67,6 @@ import requests
 import json
 import time
 import datetime
-import time
 
 #########################################
 ######## Initialize Dash/REACT	#########
@@ -1176,5 +1175,7 @@ def getOneMonthData(gdB,prevOpts,curAPI,curGroup):
 ###########################
 #### The Program Block ####
 ###########################
-if __name__ == "__main__":
-	app.run_server(debug=True, port=8888)
+# if __name__ == "__main__":
+# 	app.run_server(debug=True, port=8888)
+if __name__ == '__main__':
+    app.run_server(debug=True)
