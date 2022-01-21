@@ -494,7 +494,7 @@ def plotLineSingle(dataDict, selGroup, selTicker, proc, useDate=0, smooth=0):
 			smthData=plotData.rolling(smooth).mean()
 			smthData.iloc[0:smooth-1]=smthData.iloc[smooth]
 			sFig.add_trace(go.Scatter(x=plotData.index,y=smthData.values,mode='lines',name='smoothed'))
-		sFig.update_layout(xaxis_title="time",yaxis_title='{}{}'.format(selTicker,proc),
+		sFig.update_layout(autotypenumbers='convert types',xaxis_title="time",yaxis_title='{}{}'.format(selTicker,proc),
 			legend=dict(orientation="h",yanchor="bottom",y=1.02,xanchor="right",x=1))
 		# sFig = px.line(x=plotData.index, y=plotData.values)
 
@@ -505,7 +505,7 @@ def plotLineSingle(dataDict, selGroup, selTicker, proc, useDate=0, smooth=0):
 			smthData=plotData.rolling(smooth).mean()
 			smthData.iloc[0:smooth-1]=smthData.iloc[smooth]
 			sFig.add_trace(go.Scatter(y=smthData.values,mode='lines',name='smoothed'))
-		sFig.update_layout(xaxis_title="samples",yaxis_title='{}{}'.format(selTicker,proc),
+		sFig.update_layout(autotypenumbers='convert types',xaxis_title="samples",yaxis_title='{}{}'.format(selTicker,proc),
 			legend=dict(orientation="h",yanchor="bottom",y=1.02,xanchor="right",x=1))
 
 
