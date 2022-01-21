@@ -5,7 +5,7 @@ scikit-image
 scikit-learn
 dash
 dash-bootstrap-components
-dash-bootstrap-template
+dash-bootstrap-templates
 dash-core-components
 dash-design-kit
 dash-html-components
