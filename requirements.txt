@@ -12,3 +12,4 @@ dash_bootstrap_templates
 plotly==5.5.0
 json5
 requests
+gunicorn
