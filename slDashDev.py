@@ -111,7 +111,7 @@ def thresholdByQunatiles(data):
 	return anUpEvs,anDwnEvs
 
 def getTickerDataFromSL(ticker,apiKey):
-	response = requests.get('https://api.stocklabs.com/chart_ticks?symbol={}&type=symbol&resolution=1&from=market_open&api_key='.format(ticker) + '{}'.format(apiKey))
+	response = requests.get('https://api.stocklabs.com/chart_ticks?symbol={}&type=symbol&resolution=5&from=market_open&api_key='.format(ticker) + '{}'.format(apiKey))
 	aa=response.json()['data']['bars']
 
 	# aa[0].keys()
@@ -1162,7 +1162,7 @@ def getOneMonthData(gdB,prevOpts,curAPI,curGroup):
 			tickers.append(prevOpts[i]['label'])
 		if len(tickers)>0:
 			totalData = getTickerDataFromSL('{}'.format(tickers[0]),curAPI)
-			time.sleep(0.2)
+			time.sleep(0.1)
 			if len(tickers)>1:
 				for i in np.arange(1,len(tickers)):
 					tempData = getTickerDataFromSL('{}'.format(tickers[i]),curAPI)
