@@ -2,7 +2,7 @@
 ########################################################################
 ########################################################################
 ####																####
-####    slAIDevel v0.25												####
+####    slAIDevel v0.3												####
 ####																####
 ####    The development module for testing new AI/Data Science		####
 ####    features/extensions for Stocklabs.							####
@@ -46,7 +46,7 @@
 #		(todo: will add feedback/progress)
 #	2a) I added a wait period in between API calls so not to throttle any limits that may exist.
 #	3) Biggest one: Everything writes to a big pandas array, but, if you double score etc. it appends, does not replace.
-#	3a) This gets fixed either 0.25 or 0.3 
+#	3a) Fix in progress, to be completed at 0.35 
 
 
 ###############################
@@ -294,7 +294,7 @@ def scoreTechMetrics(dataDict,inpGrp,binWidth):
 
 	dataDict[inpGrp][1] = dataDict[inpGrp][1].loc[macroData.index]
 
-	print('score debug:{}'.format(inpGrp))
+	print('debug: scoring')
 
 	cTickers = dataDict[inpGrp][0]
 	cTypes = dataDict[inpGrp][2]
@@ -397,6 +397,7 @@ def scoreTechMetrics(dataDict,inpGrp,binWidth):
 	finDF=pd.concat([finDF, tScores], axis=1)
 	aggScore=[]
 	tScores=[]
+	# todo: how many ffills am I doing?
 	finDF.fillna(method='ffill')
 	finDF.fillna(method='bfill')
 	return finDF
@@ -485,35 +486,42 @@ def makeListDict(list,label='a'):
 	listDict= pd.DataFrame({label : list})
 	return listDict
 
+# todo: get rid of these
 defaultGroup = ['SPY','USO','UGA','UNG','DBB','GLD','UUP','SLV','FXY','DBA','TLT']
 defaultTypes = ['ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF']
 defaultIndustryID = ['ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF']
 
-tickers = ['SPY','USO','UGA','UNG','DBB','GLD','UUP','SLV','FXY','DBA','TLT']
-initGroups = ['macroDefault']
+# Based on REACT UI scheme, we simply have to have global variables of some sort.
+# Dash has a dcc.store for this, but being consistent about globals in dictionaries
+# is pythonic, but also easy to work with especially for exporting and importing states across sessions.
+
+# This dict will define session/ui variables and store their states.
+# todo: introduced in 0.3, so ironing out old vs. new.
+sessionVars ={'lastGroup':['macroDefault'],
+'initialTickers':['SPY','USO','UGA','UNG','DBB','GLD','UUP','SLV','FXY','DBA','TLT'],
+'defaultGroup_symbols':['SPY','USO','UGA','UNG','DBB','GLD','UUP','SLV','FXY','DBA','TLT'],
+'defaultGroup_instrument':['ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF']}
+
+# to make graphing more consistent, it helps to have a default to return to if confused
+# and also the last figure. We make a dict here to refer to. 
+sessionFigures = {'mat_d':px.imshow([[1, 20, 30],[20, 1, 60],[30, 60, 1]]),'line_d':px.line(y=[])}
+
+# group dictionaries: this is the main data hub.
+# Python dictionary, addressable by group (the dict's Keys). 
+# example: groupDicts['macroDefault'] is the default macro group.
+# Each group's key, is the group's value, which is a struct that contains:
+# in order: [0] = a set of symbols/tickers, [1] = a Pandas Dataframe for data, [2] = group instrument type
+# [3] is to be implemented in/by 0.35 and will be industr(y/ies).
+
 groupDicts = {}
-groupDicts.update({'macroDefault':[defaultGroup,[],defaultTypes]})
+groupDicts.update({'macroDefault':[defaultGroup,[],sessionVars['defaultGroup_instrument']]})
 
-
+# todo: get rid of these.
 # totalData = []
 haveData = 0
 haveAPI = 0
 myAPI = ''
 
-
-
-
-initGraph1 = 0
-lastPlot1=px.imshow([[1, 20, 30],[20, 1, 60],[30, 60, 1]])
-
-lastPlot2=px.line(y=[])
-initGraph2 = 0
-
-lastPlot3=px.imshow([[1, 20, 30],[20, 1, 60],[30, 60, 1]])
-initGraph3 = 0
-
-lastPlot4=px.line(y=[])
-initGraph4 = 0
 
 ############################
 ####	Webapp Layout	####
@@ -534,9 +542,9 @@ controls_a = dbc.Card(
 				
 				# html.Div(id='ticker-selector-container'),
 				dbc.Label("select group"),
-				dcc.Dropdown(id="group-selector",options=[{'label': x, 'value': x} for x in initGroups]),
+				dcc.Dropdown(id="group-selector",options=[{'label': x, 'value': x} for x in sessionVars['lastGroup']]),
 				dbc.Label("current group tickers"),
-				dcc.Dropdown(id="ticker-selector",options=[{'label': x, 'value': x} for x in tickers]),
+				dcc.Dropdown(id="ticker-selector",options=[{'label': x, 'value': x} for x in sessionVars['defaultGroup_symbols']]),
 				dbc.Button("Remove Ticker", id="removeSelected-button", className="me-2", n_clicks=0,key='b2',size='sm'),
 				dbc.Label("grab tickers from SL portfolio"),
 				dbc.InputGroup(
@@ -697,30 +705,27 @@ def getGroupTechScores(tmBtnClick,selGroup):
 
 @app.callback(Output("plotMat-button","n_clicks"),
 	Output("plotM1-graph", "figure"),
-	Input("plotMat-button","n_clicks"),
-	Input('group-selector','value'))
-def make_corMat(mpN,curGroup):
-	# global lastPlot1
+	Input("plotMat-button","n_clicks"))
+def make_corMat(mpN):
 	mfig=px.imshow([[1, 20, 30],[20, 1, 60],[30, 60, 1]])
 	if mpN != 0:
-		cTickers = groupDicts[curGroup][0]
+		cTickers = groupDicts[sessionVars['lastGroup']][0]
 		procList=addProcedureToTickerList(cTickers,'_avg')
-		mfig = px.imshow(groupDicts[curGroup][1][procList].corr())
+		mfig = px.imshow(groupDicts[sessionVars['lastGroup']][1][procList].corr())
+
 	mpN=0
 	return mpN,mfig
 
 @app.callback(Output("plotMat_button2","n_clicks"),
 	Output("plotM2-graph", "figure"),
-	Input("plotMat_button2","n_clicks"),
-	Input('group-selector','value'))
-def make_corMat2(mpN,curGroup):
+	Input("plotMat_button2","n_clicks"))
+def make_corMat2(mpN):
 	mfig=px.imshow([[1, 20, 30],[20, 1, 60],[30, 60, 1]])
 	if mpN != 0:
-		cTickers = groupDicts[curGroup][0]
+		cTickers = groupDicts[sessionVars['lastGroup']][0]
 		procList=addProcedureToTickerList(cTickers,'_avg')
-		mfig = px.imshow(groupDicts[curGroup][1][procList].corr())
+		mfig = px.imshow(groupDicts[sessionVars['lastGroup']][1][procList].corr())
 	mpN=0
-	lastPlot3 = mfig
 	return mpN,mfig
 
 @app.callback(Output("plot2-graph", "figure"),
@@ -728,13 +733,12 @@ def make_corMat2(mpN,curGroup):
 	Input('dateOrValues_switch','value'),
 	Input('plotSmooth_switch','value'),
 	Input('smooth_entry','value'),
-	Input('ticker-selector','value'),
-	Input('group-selector','value'))
-def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,curGroup):	
+	Input('ticker-selector','value'))
+def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker):	
 	mfig = px.line(y=[])
 	if plotWSmooth ==0:
 		smoothBin = 0
-	mfig = plotLineSingle(groupDicts,curGroup,curTicker,proc =gVal,useDate=plotWDate,smooth=smoothBin)
+	mfig = plotLineSingle(groupDicts,sessionVars['lastGroup'],curTicker,proc =gVal,useDate=plotWDate,smooth=smoothBin)
 	return mfig
 
 @app.callback(Output("plot3-graph", "figure"),
@@ -742,13 +746,12 @@ def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,curGroup):
 	Input('dateOrValues_switch2','value'),
 	Input('plotSmooth_switch2','value'),
 	Input('smooth_entry2','value'),
-	Input('ticker-selector','value'),
-	Input('group-selector','value'))
-def plot_tickerValues2(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,curGroup):
+	Input('ticker-selector','value'))
+def plot_tickerValues2(gVal,plotWDate,plotWSmooth,smoothBin,curTicker):
 	mfig = px.line(y=[])
 	if plotWSmooth ==0:
 		smoothBin = 0
-	mfig = plotLineSingle(groupDicts,curGroup,curTicker,proc =gVal,useDate=plotWDate,smooth=smoothBin)
+	mfig = plotLineSingle(groupDicts,sessionVars['lastGroup'],curTicker,proc =gVal,useDate=plotWDate,smooth=smoothBin)
 	return mfig
 
 ####################################
@@ -758,10 +761,11 @@ def plot_tickerValues2(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,curGroup):
 @app.callback(Output('group-selector', 'options'),
 	Output("groupAdd-button", "n_clicks"),
 	Input('group-selector', 'options'),
+	Input('group-selector', 'value'),
 	Input('groupAdd-entry','value'),
 	Input("groupAdd-button", "n_clicks"))
-def addToGroup_onClick(prevOpts,groupToAdd,gAB):
-	global groupDicts
+def addToGroup_onClick(prevOpts,curSelGroup,groupToAdd,gAB):
+	sessionVars['lastGroup'] = curSelGroup
 	if gAB != 0:
 		if groupToAdd not in list(dict.fromkeys(groupDicts)):
 			groups = []
@@ -873,13 +877,11 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 	# Output('data_feedback_container', 'children'),
 	Input('monthData_switch', "value"),
 	Input('getData-button', "n_clicks"),
-	Input('api-entry','value'),
-	Input('group-selector','value'), prevent_initial_call=True)
-def getSLData(uMnth,gdB,curAPI,curGroup):	
+	Input('api-entry','value'),prevent_initial_call=True)
+def getSLData(uMnth,gdB,curAPI):	
 	if gdB!=0:
-		global groupDicts	
-		print('console: getting data')
-		ctickers = groupDicts[curGroup][0]
+		global groupDicts
+		ctickers = groupDicts[sessionVars['lastGroup']][0]
 		if len(ctickers)>0:
 			totalData = getTickerDataFromSL('{}'.format(ctickers[0]),curAPI,uMnth)			
 			if len(ctickers)>1:
@@ -888,9 +890,21 @@ def getSLData(uMnth,gdB,curAPI,curGroup):
 					totalData=totalData.fillna(method='ffill')
 					totalData=totalData.fillna(method='bfill')
 					time.sleep(0.2) 
-		groupDicts.update({curGroup:[ctickers,totalData,[]]})
+		groupDicts.update({sessionVars['lastGroup']:[ctickers,totalData,[]]})
+		techMetricData = calculateTechMetrics(groupDicts,sessionVars['lastGroup'],10)
+		groupDicts[sessionVars['lastGroup']][1]=pd.concat([groupDicts[sessionVars['lastGroup']][1], techMetricData], axis=1)
+		try:
+			techScoreData = scoreTechMetrics(groupDicts,sessionVars['lastGroup'],10)
+			groupDicts[sessionVars['lastGroup']][1]=pd.concat([groupDicts[sessionVars['lastGroup']][1], techScoreData], axis=1)
+			try:
+				groupDicts[sessionVars['lastGroup']][1]=discountTechMetrics(groupDicts,sessionVars['lastGroup'],10)
+			except:
+				print('problem discounting')
+		except:
+			print('error with scoring')
 	gdB=0
-	print('console: grabbed data')
+	print('console: poll sl data')
+
 	return gdB
 
 ###########################
