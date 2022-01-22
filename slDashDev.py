@@ -110,8 +110,15 @@ def thresholdByQunatiles(data):
 	anDwnEvs=np.where(data<=adjBottomFence)[0]
 	return anUpEvs,anDwnEvs
 
-def getTickerDataFromSL(ticker,apiKey):
-	response = requests.get('https://api.stocklabs.com/chart_ticks?symbol={}&type=symbol&resolution=5&from=market_open&api_key='.format(ticker) + '{}'.format(apiKey))
+def getTickerDataFromSL(ticker,apiKey,useMonth=0,timeRes=1):
+	if (timeRes != 5) | (timeRes != 1):
+		timeRes=1
+
+	frmStr = 'market_open'
+	if useMonth==1:
+		frmStr = '1m'
+
+	response = requests.get('https://api.stocklabs.com/chart_ticks?symbol={}&type=symbol&resolution={}&from={}&api_key='.format(ticker,timeRes,frmStr) + '{}'.format(apiKey))
 	aa=response.json()['data']['bars']
 
 	# aa[0].keys()
@@ -183,7 +190,7 @@ def calculateTechMetrics(dataDict,inputGrp,binWidth):
 
 	print('metric debug:{}'.format(inputGrp))
 
-	# often the macroData set may not match dimensions of dataSet from group
+	# often the macroData set may not matc dimensions of dataSet from group
 	macroData = dataDict['macroDefault'][1]
 	currentData = dataDict[inputGrp][1]
 	currentData = currentData.loc[macroData.index]
@@ -279,13 +286,6 @@ def calculateTechMetrics(dataDict,inputGrp,binWidth):
 	return finDF
 
 def scoreTechMetrics(dataDict,inpGrp,binWidth):
-	# ,subRosa=0
-	# This will return pandas data suitable to add to the globalDict for the group
-	# in your procedures. 
-
-	# dataDict=dataDict.fillna(method='ffill')
-	# dataDict=dataDict.fillna(method='bfill')
-
 
 	# often the macroData set may not match dimensions of dataSet from group
 	macroData = dataDict['macroDefault'][1]
@@ -517,7 +517,7 @@ initGraph4 = 0
 ####	Webapp Layout	####
 ############################
 
-controls = dbc.Card(
+controls_a = dbc.Card(
 	[
 		html.Div(
 			[
@@ -552,24 +552,28 @@ controls = dbc.Card(
 	],
 	body=True,)
 
-controlsB = dbc.Card(
+controls_b = dbc.Card(
 	[
 		html.Div(
 			[
 				dbc.Label("Get/Score Group's Data"),
-				dbc.Button("Get Month Data", id="getData-button", className="me-2", n_clicks=0,key='b5',size='sm'),
+				dbc.InputGroup(
+					[
+						dbc.Button("Get Data", id="getData-button", className="me-2", n_clicks=0,key='b5',size='sm'),
+						dbc.RadioButton(id="monthData_switch",label="month?",value=False),
+					]),				
 				dbc.InputGroup(
 					[
 						dbc.Button("Get Tech", id="comp_techMet_btn", className="me-2", n_clicks=0,key='b14',size='sm'),
 						dbc.Button("Score Tech", id="score_techMet_btn", className="me-2", n_clicks=0,key='b15',size='sm'),
 					]),
-				html.Div(id='data-shape-container'),
+				html.Div(id='data_feedback_container'),
 			]
 		),		
 	],
 	body=True,)
 
-controls2 = dbc.Card(
+graphControls_a = dbc.Card(
 	[
 		html.Div(
 			[
@@ -577,32 +581,33 @@ controls2 = dbc.Card(
 				html.Br(),
 				dbc.Button("Cor Mat", id="plotMat-button", className="me-2", n_clicks=0,key='b6',size='sm'),
 				dbc.Button("Grp Avg", id="plotAvg-button", className="me-2", n_clicks=0,key='b13',size='sm'),
+				# dbc.InputGroup(
+				# 	[
+				# 		dbc.Button("Price", id="plot_ticker_price_btn", className="me-2", n_clicks=0,key='b7',size='sm'),
+				# 		dbc.Button("Volume", id="plot_ticker_volume_btn", className="me-2", n_clicks=0,key='b8',size='sm'),
+				# 		dbc.Button("Acc Dist", id="plot_ticker_ad_btn", className="me-2", n_clicks=0,key='b9',size='sm'),
+				# 		dbc.Button("Beta", id="plot_ticker_beta_btn", className="me-2", n_clicks=0,key='b10',size='sm'),
+				# 		dbc.Button("Price Change", id="plot_ticker_priceDelta_btn", className="me-2", n_clicks=0,key='b11',size='sm'),
+				# 		dbc.Button("Volume Change", id="plot_ticker_volumeDelta_btn", className="me-2", n_clicks=0,key='b12',size='sm'),
+				# 		dbc.Button("RSI", id="plot_ticker_rsi_btn", className="me-2", n_clicks=0,key='b13',size='sm'),
+				# 		dbc.Button("aggTech", id="plot_ticker_aggTech_btn", className="me-2", n_clicks=0,key='b19',size='sm'),
+				# 		dbc.Button("tech_pp", id="plot_ticker_ppTech_btn", className="me-2", n_clicks=0,key='b20',size='sm'),
+				# 		dbc.Button("tech_vd", id="plot_ticker_vdTech_btn", className="me-2", n_clicks=0,key='b21',size='sm'),
+				# 		dbc.Button("tech_ad", id="plot_ticker_adTech_btn", className="me-2", n_clicks=0,key='b22',size='sm'),
+				# 		dbc.Button("tech_rsi", id="plot_ticker_rsiTech_btn", className="me-2", n_clicks=0,key='b23',size='sm'),
+				# 		dbc.Button("tech_beta", id="plot_ticker_betaTech_btn", className="me-2", n_clicks=0,key='b24',size='sm'),
+		  #           ]),
 				dbc.InputGroup(
 					[
-						# plot_ticker_price_btn,plot_ticker_volume_btn,plot_ticker_ad_btn,plot_ticker_beta_btn
-						# plot_ticker_priceDelta_btn, plot_ticker_volumeDelta_btn, plot_ticker_rsi_btn, plot_ticker_aggTech_btn
-						#plot_ticker_ppTech_btn
-						dbc.Button("Price", id="plot_ticker_price_btn", className="me-2", n_clicks=0,key='b7',size='sm'),
-						dbc.Button("Volume", id="plot_ticker_volume_btn", className="me-2", n_clicks=0,key='b8',size='sm'),
-						dbc.Button("Acc Dist", id="plot_ticker_ad_btn", className="me-2", n_clicks=0,key='b9',size='sm'),
-						dbc.Button("Beta", id="plot_ticker_beta_btn", className="me-2", n_clicks=0,key='b10',size='sm'),
-						dbc.Button("Price Change", id="plot_ticker_priceDelta_btn", className="me-2", n_clicks=0,key='b11',size='sm'),
-						dbc.Button("Volume Change", id="plot_ticker_volumeDelta_btn", className="me-2", n_clicks=0,key='b12',size='sm'),
-						dbc.Button("RSI", id="plot_ticker_rsi_btn", className="me-2", n_clicks=0,key='b13',size='sm'),
-						dbc.Button("aggTech", id="plot_ticker_aggTech_btn", className="me-2", n_clicks=0,key='b19',size='sm'),
-						dbc.Button("tech_pp", id="plot_ticker_ppTech_btn", className="me-2", n_clicks=0,key='b20',size='sm'),
-						dbc.Button("tech_vd", id="plot_ticker_vdTech_btn", className="me-2", n_clicks=0,key='b21',size='sm'),
-						dbc.Button("tech_ad", id="plot_ticker_adTech_btn", className="me-2", n_clicks=0,key='b22',size='sm'),
-						dbc.Button("tech_rsi", id="plot_ticker_rsiTech_btn", className="me-2", n_clicks=0,key='b23',size='sm'),
-						dbc.Button("tech_beta", id="plot_ticker_betaTech_btn", className="me-2", n_clicks=0,key='b24',size='sm'),
-
-
-						
-		            ]),
+						dbc.RadioItems(id="plotType_A",className="btn-group-sm",inputClassName="btn-check",labelClassName="btn btn-outline-primary btn-sm",labelCheckedClassName="active",
+							options=[{"label": "price", "value": '_avg'},{"label": "volume", "value": '_volume'},{"label": "AcDist", "value": '_ad'},
+							{"label": "rsi", "value": '_rsi'},{"label": "beta", "value": '_beta'},{"label": "price dif", "value": '_pp'},{"label": "vol dif", "value": '_vd'},
+							{"label": "aggTech", "value": '_aggTech'},{"label": "tech_pp", "value": '_ppTech'}],inline=1),
+					]),
 				dbc.RadioButton(id="dateOrValues_switch",label="x-axis date",value=False),
 				dbc.InputGroup(
 					[
-						dbc.RadioButton(id="plotSmooth_switch",label="smooth:   ",value=False),
+						dbc.RadioButton(id="plotSmooth_switch",label="smooth:   ",value=True),
 						dbc.Input(id="smooth_entry", placeholder="20", value = 20, type="number",key='t20',size='sm',min=1,inputmode="numeric"),
 					]),
 				html.Br(),
@@ -613,7 +618,7 @@ controls2 = dbc.Card(
 	],
 	body=True,)
 
-controls3 = dbc.Card(
+graphControls_b = dbc.Card(
 	[
 		html.Div(
 			[
@@ -662,8 +667,8 @@ app.layout = dbc.Container(
 		html.Hr(),
 		dbc.Row(
 			[
-				dbc.Col(controls, md=2),
-				dbc.Col(controls2, md=2),
+				dbc.Col(controls_a, md=2),
+				dbc.Col(graphControls_a, md=2),
 				dbc.Col(dcc.Graph(id="plot2-graph"), md=4),
 				dbc.Col(dcc.Graph(id="plotM1-graph"), md=3),
 			],
@@ -672,8 +677,8 @@ app.layout = dbc.Container(
 		html.Br(),
 		dbc.Row(
 			[
-				dbc.Col(controlsB, md=2),
-				dbc.Col(controls3, md=2),
+				dbc.Col(controls_b, md=2),
+				dbc.Col(graphControls_b, md=2),
 				dbc.Col(dcc.Graph(id="plot3-graph"), md=4),
 				dbc.Col(dcc.Graph(id="plotM2-graph"), md=3),
 			],
@@ -686,15 +691,13 @@ app.layout = dbc.Container(
 #comp_techMet_btn
 @app.callback(Output("comp_techMet_btn","n_clicks"),
 	Input("comp_techMet_btn", "n_clicks"),
-	Input('group-selector','value'))
+	Input('group-selector','value'), prevent_initial_call=True)
 def getGroupTechMetrics(tmBtnClick,selGroup):
 	global groupDicts
 	if tmBtnClick==1:
 		# todo: make bin variable by user
 		techMetricData = calculateTechMetrics(groupDicts,selGroup,10)
 		groupDicts[selGroup][1]=pd.concat([groupDicts[selGroup][1], techMetricData], axis=1)
-
-
 	tmBtnClick=0
 	return tmBtnClick
 	
@@ -765,102 +768,27 @@ def make_corMat2(mpN,curGroup):
 	return mpN,mfig
 
 @app.callback(Output("plot2-graph", "figure"),
-	Output("plot_ticker_price_btn","n_clicks"),
-	Output("plot_ticker_volume_btn","n_clicks"),
-	Output("plot_ticker_ad_btn","n_clicks"),
-	Output("plot_ticker_beta_btn","n_clicks"),
-	Output("plot_ticker_priceDelta_btn","n_clicks"),
-	Output("plot_ticker_volumeDelta_btn","n_clicks"),
-	Output("plot_ticker_rsi_btn","n_clicks"),
-	Output("plotAvg-button","n_clicks"),
-	Output("plot_ticker_aggTech_btn","n_clicks"),
-	Output("plot_ticker_ppTech_btn","n_clicks"),
-	Output("plot_ticker_vdTech_btn","n_clicks"),
-	Output("plot_ticker_adTech_btn","n_clicks"),
-	Output("plot_ticker_rsiTech_btn","n_clicks"),
-	Output("plot_ticker_betaTech_btn","n_clicks"),
-
-	
-	
-	Input("plot_ticker_price_btn","n_clicks"),
-	Input("plot_ticker_volume_btn","n_clicks"),
-	Input("plot_ticker_ad_btn","n_clicks"),
-	Input("plot_ticker_beta_btn","n_clicks"),
-	Input("plot_ticker_priceDelta_btn","n_clicks"),
-	Input("plot_ticker_volumeDelta_btn","n_clicks"),
-	Input("plot_ticker_rsi_btn","n_clicks"),
-	Input("plotAvg-button","n_clicks"),
-	Input("plot_ticker_aggTech_btn","n_clicks"),
-	Input("plot_ticker_ppTech_btn","n_clicks"),
-
-	Input("plot_ticker_vdTech_btn","n_clicks"),
-	Input("plot_ticker_adTech_btn","n_clicks"),
-	Input("plot_ticker_rsiTech_btn","n_clicks"),
-	Input("plot_ticker_betaTech_btn","n_clicks"),
-
+	Input("plotType_A","value"),
 	Input('dateOrValues_switch','value'),
 	Input('plotSmooth_switch','value'),
 	Input('smooth_entry','value'),
 	Input('ticker-selector','value'),
 	Input('group-selector','value'))
-def plot_tickerValues(bT_p,bT_v,bT_ad,bT_b,bT_pd,bT_vd,bT_rsi,aBT,bT_aggT,bT_ppT,bT_vdT,bT_adT,bT_rsiT,bT_betaT,plotWDate,plotWSmooth,smoothBin,curTicker,curGroup):
+def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,curGroup):
 	global groupDicts
 	global lastPlot2
-	
+	print(gVal)
 	
 	if plotWSmooth ==0:
 		smoothBin = 0
 	
-	bStates = ['bT_p','bT_v','bT_ad','bT_b','bT_pd','bT_vd','bT_rsi','aBT','bT_aggT','bT_ppT','bT_vdT','bT_adT','bT_rsiT','bT_betaT']
 	try:
-		if bT_p==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_avg', useDate=plotWDate,smooth=smoothBin)
-		elif bT_v==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_volume', useDate=plotWDate,smooth=smoothBin)
-		elif bT_ad==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_adSmooth', useDate=plotWDate,smooth=smoothBin)
-		elif bT_b==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_beta', useDate=plotWDate,smooth=smoothBin)
-		elif bT_pd==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_pp', useDate=plotWDate,smooth=smoothBin)
-		elif bT_vd==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_vd', useDate=plotWDate,smooth=smoothBin)
-		elif bT_rsi==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_rsiSmooth', useDate=plotWDate,smooth=smoothBin)
-		elif bT_aggT==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_aggTech', useDate=plotWDate,smooth=smoothBin)
-		elif bT_ppT==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_pp_score', useDate=plotWDate,smooth=smoothBin)
-		elif bT_vdT==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_vd_score', useDate=plotWDate,smooth=smoothBin)
-		elif bT_adT==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_adSmooth_score', useDate=plotWDate,smooth=smoothBin)
-		elif bT_rsiT==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_rsiSmooth_score', useDate=plotWDate,smooth=smoothBin)
-		elif bT_betaT==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_beta_score', useDate=plotWDate,smooth=smoothBin)	
-		elif aBT==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_avg', useDate=plotWDate,smooth=smoothBin)
-		else:
-			mfig = lastPlot2
+		mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc =gVal, useDate=plotWDate,smooth=smoothBin)
+		lastPlot2 = mfig
 	except:
 		mfig = lastPlot2
-	bT_p=0
-	bT_v=0
-	bT_ad=0
-	bT_b=0
-	bT_pd=0
-	bT_vd=0
-	bT_rsi=0
-	aBT=0
-	bT_aggT=0
-	bT_ppT=0
-	bT_vdT=0
-	bT_adT=0
-	bT_rsiT=0
-	bT_betaT=0
-	lastPlot2 = mfig
-	return mfig,bT_p,bT_v,bT_ad,bT_b,bT_pd,bT_vd,bT_rsi,aBT,bT_aggT,bT_ppT,bT_vdT,bT_adT,bT_rsiT,bT_betaT
+
+	return mfig
 
 @app.callback(Output("plot3-graph", "figure"),
 	Output("plot_ticker_price_btn2","n_clicks"),
@@ -1074,39 +1002,38 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 
 
 ###################################
-#### Get 1 Month Data Callback ####
+#### Get Data Callback ####
 ###################################
 
 @app.callback(Output('getData-button', "n_clicks"),
-	Output('data-shape-container', 'children'),
+	# Output('data_feedback_container', 'children'),
+	Input('monthData_switch', "value"),
 	Input('getData-button', "n_clicks"),
 	Input('ticker-selector', 'options'),
 	Input('api-entry','value'),
 	Input('group-selector','value'), prevent_initial_call=True)
-def getOneMonthData(gdB,prevOpts,curAPI,curGroup):
+def getSLData(uMnth,gdB,prevOpts,curAPI,curGroup):	
 	if gdB==1:
 		global totalData
 		global groupDicts
 		global groups 
 		print('console: getting data')
-		# todo: check for previous data and don't zero out. 
 		totalData=[]
 		tickers = []
 		for i in np.arange(0,len(prevOpts)):
 			tickers.append(prevOpts[i]['label'])
 		if len(tickers)>0:
-			totalData = getTickerDataFromSL('{}'.format(tickers[0]),curAPI)
-			time.sleep(0.1)
+			totalData = getTickerDataFromSL('{}'.format(tickers[0]),curAPI,uMnth)			
 			if len(tickers)>1:
 				for i in np.arange(1,len(tickers)):
-					tempData = getTickerDataFromSL('{}'.format(tickers[i]),curAPI)
+					tempData = getTickerDataFromSL('{}'.format(tickers[i]),curAPI,uMnth)
 					time.sleep(0.2)
 					totalData=pd.concat([totalData,tempData], axis=1)
 					totalData=totalData.fillna(method='ffill')
 		groupDicts.update({curGroup:[tickers,totalData,[]]})
 	gdB=0
 	print('console: grabbed data')
-	return gdB,len(totalData)
+	return gdB
 
 ###########################
 #### The Program Block ####
