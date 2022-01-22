@@ -581,28 +581,14 @@ graphControls_a = dbc.Card(
 				html.Br(),
 				dbc.Button("Cor Mat", id="plotMat-button", className="me-2", n_clicks=0,key='b6',size='sm'),
 				dbc.Button("Grp Avg", id="plotAvg-button", className="me-2", n_clicks=0,key='b13',size='sm'),
-				# dbc.InputGroup(
-				# 	[
-				# 		dbc.Button("Price", id="plot_ticker_price_btn", className="me-2", n_clicks=0,key='b7',size='sm'),
-				# 		dbc.Button("Volume", id="plot_ticker_volume_btn", className="me-2", n_clicks=0,key='b8',size='sm'),
-				# 		dbc.Button("Acc Dist", id="plot_ticker_ad_btn", className="me-2", n_clicks=0,key='b9',size='sm'),
-				# 		dbc.Button("Beta", id="plot_ticker_beta_btn", className="me-2", n_clicks=0,key='b10',size='sm'),
-				# 		dbc.Button("Price Change", id="plot_ticker_priceDelta_btn", className="me-2", n_clicks=0,key='b11',size='sm'),
-				# 		dbc.Button("Volume Change", id="plot_ticker_volumeDelta_btn", className="me-2", n_clicks=0,key='b12',size='sm'),
-				# 		dbc.Button("RSI", id="plot_ticker_rsi_btn", className="me-2", n_clicks=0,key='b13',size='sm'),
-				# 		dbc.Button("aggTech", id="plot_ticker_aggTech_btn", className="me-2", n_clicks=0,key='b19',size='sm'),
-				# 		dbc.Button("tech_pp", id="plot_ticker_ppTech_btn", className="me-2", n_clicks=0,key='b20',size='sm'),
-				# 		dbc.Button("tech_vd", id="plot_ticker_vdTech_btn", className="me-2", n_clicks=0,key='b21',size='sm'),
-				# 		dbc.Button("tech_ad", id="plot_ticker_adTech_btn", className="me-2", n_clicks=0,key='b22',size='sm'),
-				# 		dbc.Button("tech_rsi", id="plot_ticker_rsiTech_btn", className="me-2", n_clicks=0,key='b23',size='sm'),
-				# 		dbc.Button("tech_beta", id="plot_ticker_betaTech_btn", className="me-2", n_clicks=0,key='b24',size='sm'),
-		  #           ]),
 				dbc.InputGroup(
 					[
-						dbc.RadioItems(id="plotType_A",className="btn-group-sm",inputClassName="btn-check",labelClassName="btn btn-outline-primary btn-sm",labelCheckedClassName="active",
+						dbc.RadioItems(id="plotType_A",className="btn-group-sm",inputClassName="btn-check",
+							labelClassName="btn btn-outline-primary btn-sm",labelCheckedClassName="active",
 							options=[{"label": "price", "value": '_avg'},{"label": "volume", "value": '_volume'},{"label": "AcDist", "value": '_ad'},
 							{"label": "rsi", "value": '_rsi'},{"label": "beta", "value": '_beta'},{"label": "price dif", "value": '_pp'},{"label": "vol dif", "value": '_vd'},
-							{"label": "aggTech", "value": '_aggTech'},{"label": "tech_pp", "value": '_ppTech'}],inline=1),
+							{"label": "aggTech", "value": '_aggTech'},{"label": "t_PP", "value": '_pp_score'},{"label": "t_Beta", "value": '_beta_score'},
+							{"label": "t_AcDist", "value": '_adSmooth_score'},{"label": "t_VD", "value": '_vd_score'},{"label": "t_RSI", "value": '_rsiSmooth_score'}],inline=1),
 					]),
 				dbc.RadioButton(id="dateOrValues_switch",label="x-axis date",value=False),
 				dbc.InputGroup(
@@ -610,9 +596,6 @@ graphControls_a = dbc.Card(
 						dbc.RadioButton(id="plotSmooth_switch",label="smooth:   ",value=True),
 						dbc.Input(id="smooth_entry", placeholder="20", value = 20, type="number",key='t20',size='sm',min=1,inputmode="numeric"),
 					]),
-				html.Br(),
-
-
 			]
 		),		
 	],
@@ -628,26 +611,14 @@ graphControls_b = dbc.Card(
 				dbc.Button("Grp Avg", id="plotAvg-button2", className="me-2", n_clicks=0,key='b313',size='sm'),
 				dbc.InputGroup(
 					[
-						# plot_ticker_price_btn,plot_ticker_volume_btn,plot_ticker_ad_btn,plot_ticker_beta_btn
-						# plot_ticker_priceDelta_btn, plot_ticker_volumeDelta_btn, plot_ticker_rsi_btn, plot_ticker_aggTech_btn
-						#plot_ticker_ppTech_btn
-						dbc.Button("Price", id="plot_ticker_price_btn2", className="me-2", n_clicks=0,key='b2227',size='sm'),
-						dbc.Button("Volume", id="plot_ticker_volume_btn2", className="me-2", n_clicks=0,key='b28',size='sm'),
-						dbc.Button("Acc Dist", id="plot_ticker_ad_btn2", className="me-2", n_clicks=0,key='b2229',size='sm'),
-						dbc.Button("Beta", id="plot_ticker_beta_btn2", className="me-2", n_clicks=0,key='b210',size='sm'),
-						dbc.Button("Price Change", id="plot_ticker_priceDelta_btn2", className="me-2", n_clicks=0,key='b211',size='sm'),
-						dbc.Button("Volume Change", id="plot_ticker_volumeDelta_btn2", className="me-2", n_clicks=0,key='b212',size='sm'),
-						dbc.Button("RSI", id="plot_ticker_rsi_btn2", className="me-2", n_clicks=0,key='b13',size='sm'),
-						dbc.Button("aggTech", id="plot_ticker_aggTech_btn2", className="me-2", n_clicks=0,key='b219',size='sm'),
-						dbc.Button("tech_pp", id="plot_ticker_ppTech_btn2", className="me-2", n_clicks=0,key='b220',size='sm'),
-						dbc.Button("tech_vd", id="plot_ticker_vdTech_btn2", className="me-2", n_clicks=0,key='b221',size='sm'),
-						dbc.Button("tech_ad", id="plot_ticker_adTech_btn2", className="me-2", n_clicks=0,key='b222',size='sm'),
-						dbc.Button("tech_rsi", id="plot_ticker_rsiTech_btn2", className="me-2", n_clicks=0,key='b223',size='sm'),
-						dbc.Button("tech_beta", id="plot_ticker_betaTech_btn2", className="me-2", n_clicks=0,key='b224',size='sm'),
-
-
-						
-		            ]),
+						dbc.RadioItems(id="plotType_B",className="btn-group-sm",inputClassName="btn-check",
+							labelClassName="btn btn-outline-primary btn-sm",labelCheckedClassName="active",
+							options=[{"label": "price", "value": '_avg'},{"label": "volume", "value": '_volume'},{"label": "AcDist", "value": '_ad'},
+							{"label": "rsi", "value": '_rsi'},{"label": "beta", "value": '_beta'},{"label": "price dif", "value": '_pp'},{"label": "vol dif", "value": '_vd'},
+							{"label": "aggTech", "value": '_aggTech'},{"label": "t_PP", "value": '_pp_score'},{"label": "t_Beta", "value": '_beta_score'},
+							{"label": "t_AcDist", "value": '_adSmooth_score'},{"label": "t_VD", "value": '_vd_score'},{"label": "t_RSI", "value": '_rsiSmooth_score'}],inline=1),
+							# labelStyle={'display': 'inline-block'}
+					]),
 				dbc.RadioButton(id="dateOrValues_switch2",label="x-axis date",value=False),
 				dbc.InputGroup(
 					[
@@ -781,110 +752,34 @@ def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,curGroup):
 	
 	if plotWSmooth ==0:
 		smoothBin = 0
-	
 	try:
-		mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc =gVal, useDate=plotWDate,smooth=smoothBin)
+		mfig = plotLineSingle(groupDicts,curGroup,curTicker,proc =gVal,useDate=plotWDate,smooth=smoothBin)
 		lastPlot2 = mfig
 	except:
 		mfig = lastPlot2
-
 	return mfig
 
 @app.callback(Output("plot3-graph", "figure"),
-	Output("plot_ticker_price_btn2","n_clicks"),
-	Output("plot_ticker_volume_btn2","n_clicks"),
-	Output("plot_ticker_ad_btn2","n_clicks"),
-	Output("plot_ticker_beta_btn2","n_clicks"),
-	Output("plot_ticker_priceDelta_btn2","n_clicks"),
-	Output("plot_ticker_volumeDelta_btn2","n_clicks"),
-	Output("plot_ticker_rsi_btn2","n_clicks"),
-	Output("plotAvg-button2","n_clicks"),
-	Output("plot_ticker_aggTech_btn2","n_clicks"),
-	Output("plot_ticker_ppTech_btn2","n_clicks"),
-	Output("plot_ticker_vdTech_btn2","n_clicks"),
-	Output("plot_ticker_adTech_btn2","n_clicks"),
-	Output("plot_ticker_rsiTech_btn2","n_clicks"),
-	Output("plot_ticker_betaTech_btn2","n_clicks"),
-
-	
-	
-	Input("plot_ticker_price_btn2","n_clicks"),
-	Input("plot_ticker_volume_btn2","n_clicks"),
-	Input("plot_ticker_ad_btn2","n_clicks"),
-	Input("plot_ticker_beta_btn2","n_clicks"),
-	Input("plot_ticker_priceDelta_btn2","n_clicks"),
-	Input("plot_ticker_volumeDelta_btn2","n_clicks"),
-	Input("plot_ticker_rsi_btn2","n_clicks"),
-	Input("plotAvg-button2","n_clicks"),
-	Input("plot_ticker_aggTech_btn2","n_clicks"),
-	Input("plot_ticker_ppTech_btn2","n_clicks"),
-
-	Input("plot_ticker_vdTech_btn2","n_clicks"),
-	Input("plot_ticker_adTech_btn2","n_clicks"),
-	Input("plot_ticker_rsiTech_btn2","n_clicks"),
-	Input("plot_ticker_betaTech_btn2","n_clicks"),
-
+	Input("plotType_B","value"),
 	Input('dateOrValues_switch2','value'),
 	Input('plotSmooth_switch2','value'),
 	Input('smooth_entry2','value'),
 	Input('ticker-selector','value'),
 	Input('group-selector','value'))
-def plot_tickerValues2(bT_p,bT_v,bT_ad,bT_b,bT_pd,bT_vd,bT_rsi,aBT,bT_aggT,bT_ppT,bT_vdT,bT_adT,bT_rsiT,bT_betaT,plotWDate,plotWSmooth,smoothBin,curTicker,curGroup):
+def plot_tickerValues2(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,curGroup):
 	global groupDicts
 	global lastPlot4
+	print(gVal)
+	
 	if plotWSmooth ==0:
 		smoothBin = 0
-	
-	bStates = ['bT_p','bT_v','bT_ad','bT_b','bT_pd','bT_vd','bT_rsi','aBT','bT_aggT','bT_ppT','bT_vdT','bT_adT','bT_rsiT','bT_betaT']
 	try:
-		if bT_p==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_avg', useDate=plotWDate,smooth=smoothBin)
-		elif bT_v==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_volume', useDate=plotWDate,smooth=smoothBin)
-		elif bT_ad==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_adSmooth', useDate=plotWDate,smooth=smoothBin)
-		elif bT_b==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_beta', useDate=plotWDate,smooth=smoothBin)
-		elif bT_pd==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_pp', useDate=plotWDate,smooth=smoothBin)
-		elif bT_vd==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_vd', useDate=plotWDate,smooth=smoothBin)
-		elif bT_rsi==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_rsiSmooth', useDate=plotWDate,smooth=smoothBin)
-		elif bT_aggT==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_aggTech', useDate=plotWDate,smooth=smoothBin)
-		elif bT_ppT==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_pp_score', useDate=plotWDate,smooth=smoothBin)
-		elif bT_vdT==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_vd_score', useDate=plotWDate,smooth=smoothBin)
-		elif bT_adT==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_adSmooth_score', useDate=plotWDate,smooth=smoothBin)
-		elif bT_rsiT==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_rsiSmooth_score', useDate=plotWDate,smooth=smoothBin)
-		elif bT_betaT==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_beta_score', useDate=plotWDate,smooth=smoothBin)	
-		elif aBT==1:
-			mfig = plotLineSingle(groupDicts, curGroup, curTicker, proc = '_avg', useDate=plotWDate,smooth=smoothBin)
-		else:
-			mfig = lastPlot4
+		mfig = plotLineSingle(groupDicts,curGroup,curTicker,proc =gVal,useDate=plotWDate,smooth=smoothBin)
+		lastPlot4 = mfig
 	except:
 		mfig = lastPlot4
-	bT_p=0
-	bT_v=0
-	bT_ad=0
-	bT_b=0
-	bT_pd=0
-	bT_vd=0
-	bT_rsi=0
-	aBT=0
-	bT_aggT=0
-	bT_ppT=0
-	bT_vdT=0
-	bT_adT=0
-	bT_rsiT=0
-	bT_betaT=0
-	lastPlot4 = mfig
-	return mfig,bT_p,bT_v,bT_ad,bT_b,bT_pd,bT_vd,bT_rsi,aBT,bT_aggT,bT_ppT,bT_vdT,bT_adT,bT_rsiT,bT_betaT
+
+	return mfig
 
 ####################################
 #### 	Group Entry Callback	####
