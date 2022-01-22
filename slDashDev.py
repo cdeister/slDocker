@@ -186,7 +186,6 @@ def calculateTechMetrics(dataDict,inputGrp,binWidth):
 	# often the macroData set may not match dimensions of dataSet from group
 	macroData = dataDict['macroDefault'][1]
 	currentData = dataDict[inputGrp][1]
-	print(np.shape(currentData))
 	currentData = currentData.loc[macroData.index]
 
 	if np.shape(macroData)[0]>np.shape(currentData)[0]:
@@ -198,18 +197,12 @@ def calculateTechMetrics(dataDict,inputGrp,binWidth):
 		currentData.fillna(method='ffill')
 		currentData.fillna(method='bfill')
 
-	print('metric uneven?')
-	print(np.shape(macroData))
-	print(np.shape(currentData))
-
-
 
 	# This will return pandas data suitable to add to the globalDict for the group
 	# in your procedures. 
 
 	# get pandas strings for components for all symbols in our group
-	cTickers = dataDict[inputGrp][0]
-	print(cTickers)
+	cTickers = dataDict[inputGrp][0]	
 	avgPriceStrs = addProcedureToTickerList(cTickers,'_avg')
 	volumeeStrs = addProcedureToTickerList(cTickers,'_volume')
 	adStrs = addProcedureToTickerList(cTickers,'_ad')
@@ -282,10 +275,7 @@ def calculateTechMetrics(dataDict,inputGrp,binWidth):
 
 	# finDF.fillna(method='ffill')
 	# finDF.fillna(method='bfill')
-	print('metric fin uneven?')
-	print(np.shape(macroData))
-	print(np.shape(currentData))
-	print(np.shape(finDF))
+	print('metrics done')
 	return finDF
 
 def scoreTechMetrics(dataDict,inpGrp,binWidth):
@@ -307,9 +297,7 @@ def scoreTechMetrics(dataDict,inpGrp,binWidth):
 
 	cTickers = dataDict[inpGrp][0]
 	cTypes = dataDict[inpGrp][2]
-	print('got these tickers ')
-	print(cTickers)
-	print(cTypes)
+
 
 	useETF = 0
 	if inpGrp == 'macroDefault':
@@ -323,13 +311,10 @@ def scoreTechMetrics(dataDict,inpGrp,binWidth):
 	techmetric_smRSIStr = addProcedureToTickerList(cTickers,'_rsiSmooth')
 	techmetric_accDistStr = addProcedureToTickerList(cTickers,'_adSmooth')
 	techmetric_betaStr = addProcedureToTickerList(cTickers,'_beta')
-	print('got through stings ')
 	aggStrings = addProcedureToTickerList(cTickers,'_aggTech')
-	print('got through stings ')
 
 
 	pScores=dataDict[inpGrp][1][techmetric_priceStr].copy()
-	print('made pscore copy')
 	
 	if useETF == 1:
 		pScores.iloc[dataDict[inpGrp][1][techmetric_priceStr].values<=0.001]=1
@@ -337,30 +322,23 @@ def scoreTechMetrics(dataDict,inpGrp,binWidth):
 		pScores.iloc[(dataDict[inpGrp][1][techmetric_priceStr].values>0.05) & (dataDict[inpGrp][1][techmetric_priceStr].values<=0.10)]=3
 		pScores.iloc[(dataDict[inpGrp][1][techmetric_priceStr].values>0.10) & (dataDict[inpGrp][1][techmetric_priceStr].values<=0.15)]=4
 		pScores.iloc[(dataDict[inpGrp][1][techmetric_priceStr].values>0.15)]=5
-		print('made pscores')
 		pScores.columns = addProcedureToTickerList(cTickers,'_pp_score')
 
-		print('made pscores cols')
 		aggScore = pScores.mul(0.3).values
-		print('made agg')
-		print(aggScore)
+
 	else:
 		pScores.iloc[dataDict[inpGrp][1][techmetric_priceStr].values<=0.01]=1
 		pScores.iloc[(dataDict[inpGrp][1][techmetric_priceStr].values>0.01) & (dataDict[inpGrp][1][techmetric_priceStr].values<=0.05)]=2
 		pScores.iloc[(dataDict[inpGrp][1][techmetric_priceStr].values>0.05) & (dataDict[inpGrp][1][techmetric_priceStr].values<=0.10)]=3
 		pScores.iloc[(dataDict[inpGrp][1][techmetric_priceStr].values>0.10) & (dataDict[inpGrp][1][techmetric_priceStr].values<=0.15)]=4
 		pScores.iloc[(dataDict[inpGrp][1][techmetric_priceStr].values>0.15)]=5
-		print('made pscores')
 		pScores.columns = addProcedureToTickerList(cTickers,'_pp_score')
-
-		print('made pscores cols')
 		aggScore = pScores.mul(0.3).values
 
 
 
 
 	RSIScores=dataDict[inpGrp][1][techmetric_smRSIStr].copy()
-	print('made rsi')
 	RSIScores.iloc[dataDict[inpGrp][1][techmetric_smRSIStr].values<=60]=1
 	RSIScores.iloc[(dataDict[inpGrp][1][techmetric_smRSIStr].values>60) & (dataDict[inpGrp][1][techmetric_smRSIStr].values<=80)]=2
 	RSIScores.iloc[(dataDict[inpGrp][1][techmetric_smRSIStr].values>80) & (dataDict[inpGrp][1][techmetric_smRSIStr].values<=90)]=3
@@ -368,27 +346,21 @@ def scoreTechMetrics(dataDict,inpGrp,binWidth):
 	RSIScores.iloc[(dataDict[inpGrp][1][techmetric_smRSIStr].values>95)]=5
 
 	RSIScores.columns = addProcedureToTickerList(cTickers,'_rsiSmooth_score')
-	print('scored rsi')
 	# start cleaning up for memory use etc. 
 	finDF=pd.concat([pScores, RSIScores], axis=1)
-	print('made df')
 	aggScore = aggScore + RSIScores.mul(0.1).values
-	print('added to agg')
 	pScores=[]
 	RSIScores=[]
 
 	ADScores=dataDict[inpGrp][1][techmetric_accDistStr].copy()
-	print('copied ad')
 	ADScores.iloc[dataDict[inpGrp][1][techmetric_accDistStr].values<=0.50]=1
 	ADScores.iloc[(dataDict[inpGrp][1][techmetric_accDistStr].values>0.50) & (dataDict[inpGrp][1][techmetric_accDistStr].values<=0.75)]=2
 	ADScores.iloc[(dataDict[inpGrp][1][techmetric_accDistStr].values>0.75) & (dataDict[inpGrp][1][techmetric_accDistStr].values<=0.85)]=3
 	ADScores.iloc[(dataDict[inpGrp][1][techmetric_accDistStr].values>0.85) & (dataDict[inpGrp][1][techmetric_accDistStr].values<=0.95)]=4
 	ADScores.iloc[(dataDict[inpGrp][1][techmetric_accDistStr].values>0.95)]=5
-	print('score ad')
 	ADScores.columns = addProcedureToTickerList(cTickers,'_adSmooth_score')
 	finDF=pd.concat([finDF, ADScores], axis=1)
 	aggScore = aggScore + ADScores.mul(0.5).values	
-	print('added ad to agg')
 	ADScores=[]
 
 	betaScores=dataDict[inpGrp][1][techmetric_betaStr].copy()
@@ -413,17 +385,13 @@ def scoreTechMetrics(dataDict,inpGrp,binWidth):
 	volumeScores.iloc[(dataDict[inpGrp][1][techmetric_volDeltaStr].values>2.00)]=5
 
 	volumeScores.columns = addProcedureToTickerList(cTickers,'_vd_score')
-	print('past vol to agg')
 	finDF=pd.concat([finDF, volumeScores], axis=1)
 	aggScore = aggScore + volumeScores.mul(0.05).values
 	
 	volumeScores=[]
-	print('about to df agg')
 	tScores=pd.DataFrame(aggScore)
-	print('about to index')
 	tScores=tScores.set_index(dataDict[inpGrp][1].index)
 	tScores.columns=aggStrings
-	print('did col')
 	print('going to concat')
 	finDF=pd.concat([finDF, tScores], axis=1)
 	aggScore=[]
@@ -996,44 +964,24 @@ def plot_tickerValues2(bT_p,bT_v,bT_ad,bT_b,bT_pd,bT_vd,bT_rsi,aBT,bT_aggT,bT_pp
 
 @app.callback(Output('group-selector', 'options'),
 	Output("groupAdd-button", "n_clicks"),
-	Output('group-selector', 'placeholder'),
-	Output('group-selector', 'value'),
-	Output('groupAdd-entry','value'),
-	Input('group-selector', 'value'),
-	Input('group-selector', 'placeholder'),
 	Input('group-selector', 'options'),
 	Input('groupAdd-entry','value'),
 	Input("groupAdd-button", "n_clicks"))
-def addToGroup_onClick(curValue,curDisp,prevOpts,groupToAdd,gAB):
+def addToGroup_onClick(prevOpts,groupToAdd,gAB):
 	global groupDicts
+	
 	if gAB == 1:
 		if groupToAdd not in list(dict.fromkeys(groupDicts)):
-			try:
-				print('trying')
-				groups = []
-				print(groups)
-				for i in np.arange(0,len(prevOpts)):
-					groups.append(prevOpts[i]['label'])
-				groups = groups + [groupToAdd]
-				print(groups)
-				# dedupe
-				groups=list(dict.fromkeys(groups))
-				newOptions=[{'label': x, 'value': x} for x in groups]
-				groupDicts.update({groupToAdd:[[],[],[]]})
-				print('newGroup Dict')
-				dispStr=groupToAdd
-				entryDispString=''
-				curValue=groupToAdd
-			except:
-				newOptions = prevOpts
-				entryDispString=''
-				dispStr=curDisp
-	else:
-		newOptions = prevOpts
-		dispStr=curDisp
-		entryDispString=groupToAdd
+			groups = []
+			for i in np.arange(0,len(prevOpts)):
+				groups.append(prevOpts[i]['label'])
+			groups = groups + [groupToAdd]
+			groups=list(dict.fromkeys(groups))
+			prevOpts=[{'label': x, 'value': x} for x in groups]
+			groupDicts.update({groupToAdd:[[],[],[]]})
+
 	gAB=0
-	return newOptions,gAB,dispStr,curValue,entryDispString
+	return prevOpts,gAB
 
 
 ####################################
@@ -1059,8 +1007,6 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 	# state 1: if portfolio add
 	global groupDicts
 	if nGB == 1:
-		print('s1')
-		print(selectedGroup)
 		try:
 			newTickers = getTickersFromPortfolio(uPort,uAPIKEY)
 			# see if we have some already, a dict entry may not exist
@@ -1069,27 +1015,15 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 				cTickers = cTickers + newTickers
 			except:
 				cTickers = newTickers
-			print(cTickers)
-			print(prevOpts)
-			# for i in np.arange(0,len(prevOpts)):
-			# 	cTickers.append(prevOpts[i]['label'])
-			# dedupe
 			cTickers=list(dict.fromkeys(cTickers))
 			newOptions=[{'label': x, 'value': x} for x in cTickers]
-
-			print(newOptions)
 			try:
-				print('isDict?')
 				groupDicts[selectedGroup][0]=cTickers
 			except:
-				print('noDict?')
 				groupDicts.update({selectedGroup:[cTickers,[],[]]})
-				print('noDict2?')
 		except:
-			print('error: failed to get new tickers')
 			newOptions = prevOpts
 	elif nTB == 1:
-		print('s2')
 		try:
 			# see if we have some already
 			try:
@@ -1109,10 +1043,10 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 				groupDicts.update({selectedGroup:[cTickers,[],[]]})
 
 		except:
-			print('error: failed to add new ticker')
+			
 			newOptions = prevOpts
 	elif nRB == 1:
-		print('s3')
+		
 		try:
 			cTickers = []
 			for i in np.arange(0,len(prevOpts)):
@@ -1125,7 +1059,6 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 			except:
 				groupDicts.update({selectedGroup:[cTickers,[],[]]})
 		except:
-			print('error: failed to remove ticker')
 			newOptions = prevOpts
 	else:
 		try:
@@ -1144,11 +1077,12 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 #### Get 1 Month Data Callback ####
 ###################################
 
-@app.callback(Output('getData-button', "n_clicks"),Output('data-shape-container', 'children'),
+@app.callback(Output('getData-button', "n_clicks"),
+	Output('data-shape-container', 'children'),
 	Input('getData-button', "n_clicks"),
 	Input('ticker-selector', 'options'),
 	Input('api-entry','value'),
-	Input('group-selector','value'))
+	Input('group-selector','value'), prevent_initial_call=True)
 def getOneMonthData(gdB,prevOpts,curAPI,curGroup):
 	if gdB==1:
 		global totalData
