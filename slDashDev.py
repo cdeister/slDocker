@@ -533,6 +533,7 @@ controls_a = dbc.Card(
 			[
 				dcc.Store(id='localStore', storage_type='local'),
 				dcc.Store(id='symbolStore', storage_type='local'),
+				dcc.Store(id='dataDictStore', storage_type='local'),
 				dbc.Label("enter api key",key='l1'),
 				dbc.Input(id="api-entry", placeholder='', type="text",key='t1',size='sm'),
 				dbc.Label("name group"),
@@ -707,26 +708,28 @@ def getGroupTechScores(tmBtnClick,selGroup):
 
 @app.callback(Output("plotMat-button","n_clicks"),
 	Output("plotM1-graph", "figure"),
-	Input("plotMat-button","n_clicks"))
-def make_corMat(mpN):
+	Input("plotMat-button","n_clicks"),
+	Input("localStore", 'data'))
+def make_corMat(mpN,grpStr):
 	mfig=px.imshow([[1, 20, 30],[20, 1, 60],[30, 60, 1]])
 	if mpN != 0:
-		cTickers = groupDicts[sessionVars['lastGroup']][0]
+		cTickers = groupDicts[grpStr][0]
 		procList=addProcedureToTickerList(cTickers,'_avg')
-		mfig = px.imshow(groupDicts[sessionVars['lastGroup']][1][procList].corr())
+		mfig = px.imshow(groupDicts[grpStr][1][procList].corr())
 
 	mpN=0
 	return mpN,mfig
 
 @app.callback(Output("plotMat_button2","n_clicks"),
 	Output("plotM2-graph", "figure"),
-	Input("plotMat_button2","n_clicks"))
-def make_corMat2(mpN):
+	Input("plotMat_button2","n_clicks"),
+	Input("localStore", 'data'))
+def make_corMat2(mpN,grpStr):
 	mfig=px.imshow([[1, 20, 30],[20, 1, 60],[30, 60, 1]])
 	if mpN != 0:
-		cTickers = groupDicts[sessionVars['lastGroup']][0]
+		cTickers = groupDicts[grpStr][0]
 		procList=addProcedureToTickerList(cTickers,'_avg')
-		mfig = px.imshow(groupDicts[sessionVars['lastGroup']][1][procList].corr())
+		mfig = px.imshow(groupDicts[grpStr][1][procList].corr())
 	mpN=0
 	return mpN,mfig
 
@@ -735,12 +738,13 @@ def make_corMat2(mpN):
 	Input('dateOrValues_switch','value'),
 	Input('plotSmooth_switch','value'),
 	Input('smooth_entry','value'),
-	Input("symbolStore", 'data'))
-def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker):	
+	Input("symbolStore", 'data'),
+	Input("localStore", 'data'))
+def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStrA):	
 	mfig = px.line(y=[])
 	if plotWSmooth ==0:
 		smoothBin = 0
-	mfig = plotLineSingle(groupDicts,sessionVars['lastGroup'],curTicker,proc =gVal,useDate=plotWDate,smooth=smoothBin)
+	mfig = plotLineSingle(groupDicts,grpStrA,curTicker,proc =gVal,useDate=plotWDate,smooth=smoothBin)
 	return mfig
 
 @app.callback(Output("plot3-graph", "figure"),
@@ -748,12 +752,13 @@ def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker):
 	Input('dateOrValues_switch2','value'),
 	Input('plotSmooth_switch2','value'),
 	Input('smooth_entry2','value'),
-	Input("symbolStore", 'data'))
-def plot_tickerValues2(gVal,plotWDate,plotWSmooth,smoothBin,curTicker):
+	Input("symbolStore", 'data'),
+	Input("localStore", 'data'))
+def plot_tickerValues2(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStrB):
 	mfig = px.line(y=[])
 	if plotWSmooth ==0:
 		smoothBin = 0
-	mfig = plotLineSingle(groupDicts,sessionVars['lastGroup'],curTicker,proc =gVal,useDate=plotWDate,smooth=smoothBin)
+	mfig = plotLineSingle(groupDicts,grpStrB,curTicker,proc =gVal,useDate=plotWDate,smooth=smoothBin)
 	return mfig
 
 ####################################
@@ -767,14 +772,11 @@ def plot_tickerValues2(gVal,plotWDate,plotWSmooth,smoothBin,curTicker):
 	Input('group-selector', 'value'),
 	Input('groupAdd-entry','value'),
 	Input("groupAdd-button", "n_clicks"),
-	Input("localStore", 'data'),)
+	Input("localStore", 'data'))
 def addToGroup_onClick(prevOpts,curSelGroup,groupToAdd,gAB,dcStoreGroup):
-	print('dcc')
-	print(dcStoreGroup)
+
 	sessionVars['lastGroup'] = curSelGroup
-	print(curSelGroup)
 	dcStoreGroup = curSelGroup
-	print(curSelGroup)
 	if gAB != 0:
 		if groupToAdd not in list(dict.fromkeys(groupDicts)):
 			groups = []
@@ -892,14 +894,12 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 @app.callback(Output('getData-button', "n_clicks"),
 	# Output('data_feedback_container', 'children'),
 	Input("localStore", 'data'),
+	# Input("symbolStore", 'data'),
 	Input('monthData_switch', "value"),
 	Input('getData-button', "n_clicks"),
 	Input('api-entry','value'),prevent_initial_call=True)
 def getSLData(strGrp,uMnth,gdB,curAPI):	
 	if gdB!=0:
-		print('dcc')
-		print(sessionVars['lastGroup'])
-		print(strGrp)
 		global groupDicts
 		ctickers = groupDicts[strGrp][0]
 		if len(ctickers)>0:
