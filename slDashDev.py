@@ -2,7 +2,7 @@
 ########################################################################
 ########################################################################
 ####																####
-####    slAIDevel v0.3												####
+####    slAIDevel v0.34												####
 ####																####
 ####    The development module for testing new AI/Data Science		####
 ####    features/extensions for Stocklabs.							####
@@ -190,11 +190,11 @@ def addTickersToGroup(newTickerString,curTickerStrings,curTickerData,apiKey):
 def calculateTechMetrics(dataDict,inputGrp,binWidth):
 
 	print('metric debug:{}'.format(inputGrp))
-
 	# often the macroData set may not matc dimensions of dataSet from group
 	macroData = dataDict['macroDefault'][1]
 	currentData = dataDict[inputGrp][1]
 	currentData = currentData.loc[macroData.index]
+	
 
 	if np.shape(macroData)[0]>np.shape(currentData)[0]:
 		macroData=macroData.loc[currentData.index]
@@ -455,8 +455,8 @@ def discountTechMetrics(dataDict,inputGroup,binWidth):
 
 ### UI Functions ###
 
-def plotLineSingle(dataDict, selGroup, selTicker, proc, useDate=0, smooth=0):
-	plotData = dataDict[selGroup][1]['{}{}'.format(selTicker,proc)]
+def plotLineSingle(dataDict, selTicker, proc, useDate=0, smooth=0):
+	plotData = dataDict['{}{}'.format(selTicker,proc)]
 	if useDate == 1:
 		sFig = go.Figure()
 		sFig.add_trace(go.Scatter(x=plotData.index,y=plotData.values,mode='lines',name='data'))
@@ -480,7 +480,6 @@ def plotLineSingle(dataDict, selGroup, selTicker, proc, useDate=0, smooth=0):
 
 
 	return sFig
-
 
 def makeListDict(list,label='a'):
 	listDict= pd.DataFrame({label : list})
@@ -575,11 +574,11 @@ controls_b = dbc.Card(
 						dbc.Button("Get Data", id="getData-button", className="me-2", n_clicks=0,key='b5',size='sm'),
 						dbc.RadioButton(id="monthData_switch",label="month?",value=False),
 					]),				
-				dbc.InputGroup(
-					[
-						dbc.Button("Get Tech", id="comp_techMet_btn", className="me-2", n_clicks=0,key='b14',size='sm'),
-						dbc.Button("Score Tech", id="score_techMet_btn", className="me-2", n_clicks=0,key='b15',size='sm'),
-					]),
+				# dbc.InputGroup(
+				# 	[
+				# 		dbc.Button("Get Tech", id="comp_techMet_btn", className="me-2", n_clicks=0,key='b14',size='sm'),
+				# 		dbc.Button("Score Tech", id="score_techMet_btn", className="me-2", n_clicks=0,key='b15',size='sm'),
+				# 	]),
 				html.Div(id='data_feedback_container'),
 			]
 		),		
@@ -673,49 +672,21 @@ app.layout = dbc.Container(
 	fluid=True,
 )
 
-#comp_techMet_btn
-@app.callback(Output("comp_techMet_btn","n_clicks"),
-	Input("comp_techMet_btn", "n_clicks"),
-	Input('group-selector','value'), prevent_initial_call=True)
-def getGroupTechMetrics(tmBtnClick,selGroup):
-	global groupDicts
-	if tmBtnClick!=0:
-		# todo: make bin variable by user
-		techMetricData = calculateTechMetrics(groupDicts,selGroup,10)
-		groupDicts[selGroup][1]=pd.concat([groupDicts[selGroup][1], techMetricData], axis=1)
-	tmBtnClick=0
-	return tmBtnClick
-	
-#score_techMet_btn
-@app.callback(Output("score_techMet_btn","n_clicks"),
-	Input("score_techMet_btn", "n_clicks"),
-	Input('group-selector','value'))
-def getGroupTechScores(tmBtnClick,selGroup):
-	global groupDicts
-	if tmBtnClick!=0:
-		# todo: make bin variable by user
-		try:
-			techScoreData = scoreTechMetrics(groupDicts,selGroup,10)
-			groupDicts[selGroup][1]=pd.concat([groupDicts[selGroup][1], techScoreData], axis=1)
-			try:
-				groupDicts[selGroup][1]=discountTechMetrics(groupDicts,selGroup,10)
-			except:
-				print('problem discounting')
-		except:
-			print('error with scoring')
-	tmBtnClick=0
-	return tmBtnClick
-
 @app.callback(Output("plotMat-button","n_clicks"),
 	Output("plotM1-graph", "figure"),
 	Input("plotMat-button","n_clicks"),
-	Input("localStore", 'data'))
-def make_corMat(mpN,grpStr):
+	Input("localStore", 'data'),
+	Input("dataDictStore", 'data'))
+def make_corMat(mpN,grpStr,cData):
 	mfig=px.imshow([[1, 20, 30],[20, 1, 60],[30, 60, 1]])
+	# this should plot whatever is in the buffer.
 	if mpN != 0:
-		cTickers = groupDicts[grpStr][0]
+		# your group may be lost
+		realKey = list(dict.fromkeys(cData))[0]
+		aData=pd.read_json(cData[realKey][1])
+		cTickers=cData[realKey][0]
 		procList=addProcedureToTickerList(cTickers,'_avg')
-		mfig = px.imshow(groupDicts[grpStr][1][procList].corr())
+		mfig = px.imshow(aData[procList].corr())
 
 	mpN=0
 	return mpN,mfig
@@ -723,13 +694,19 @@ def make_corMat(mpN,grpStr):
 @app.callback(Output("plotMat_button2","n_clicks"),
 	Output("plotM2-graph", "figure"),
 	Input("plotMat_button2","n_clicks"),
-	Input("localStore", 'data'))
-def make_corMat2(mpN,grpStr):
+	Input("localStore", 'data'),
+	Input("dataDictStore", 'data'))
+def make_corMat2(mpN,grpStr,cData):
 	mfig=px.imshow([[1, 20, 30],[20, 1, 60],[30, 60, 1]])
+	# this should plot whatever is in the buffer.
 	if mpN != 0:
-		cTickers = groupDicts[grpStr][0]
+		# your group may be lost
+		realKey = list(dict.fromkeys(cData))[0]
+		aData=pd.read_json(cData[realKey][1])
+		cTickers=cData[realKey][0]
 		procList=addProcedureToTickerList(cTickers,'_avg')
-		mfig = px.imshow(groupDicts[grpStr][1][procList].corr())
+		mfig = px.imshow(aData[procList].corr())
+
 	mpN=0
 	return mpN,mfig
 
@@ -739,12 +716,18 @@ def make_corMat2(mpN,grpStr):
 	Input('plotSmooth_switch','value'),
 	Input('smooth_entry','value'),
 	Input("symbolStore", 'data'),
-	Input("localStore", 'data'))
-def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStrA):	
+	Input("localStore", 'data'),
+	Input("dataDictStore", 'data'))
+def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStrA,cData):	
 	mfig = px.line(y=[])
+	
+	realKey = list(dict.fromkeys(cData))[0]
+	aData=pd.read_json(cData[realKey][1])
+	cTickers=cData[realKey][0]
+
 	if plotWSmooth ==0:
 		smoothBin = 0
-	mfig = plotLineSingle(groupDicts,grpStrA,curTicker,proc =gVal,useDate=plotWDate,smooth=smoothBin)
+	mfig = plotLineSingle(aData,curTicker,proc =gVal,useDate=plotWDate,smooth=smoothBin)
 	return mfig
 
 @app.callback(Output("plot3-graph", "figure"),
@@ -753,12 +736,18 @@ def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStrA):
 	Input('plotSmooth_switch2','value'),
 	Input('smooth_entry2','value'),
 	Input("symbolStore", 'data'),
-	Input("localStore", 'data'))
-def plot_tickerValues2(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStrB):
+	Input("localStore", 'data'),
+	Input("dataDictStore", 'data'))
+def plot_tickerValues2(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStrA,cData):
 	mfig = px.line(y=[])
+	
+	realKey = list(dict.fromkeys(cData))[0]
+	aData=pd.read_json(cData[realKey][1])
+	cTickers=cData[realKey][0]
+
 	if plotWSmooth ==0:
 		smoothBin = 0
-	mfig = plotLineSingle(groupDicts,grpStrB,curTicker,proc =gVal,useDate=plotWDate,smooth=smoothBin)
+	mfig = plotLineSingle(aData,curTicker,proc =gVal,useDate=plotWDate,smooth=smoothBin)
 	return mfig
 
 ####################################
@@ -775,8 +764,6 @@ def plot_tickerValues2(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStrB):
 	Input("localStore", 'data'))
 def addToGroup_onClick(prevOpts,curSelGroup,groupToAdd,gAB,dcStoreGroup):
 
-	sessionVars['lastGroup'] = curSelGroup
-	dcStoreGroup = curSelGroup
 	if gAB != 0:
 		if groupToAdd not in list(dict.fromkeys(groupDicts)):
 			groups = []
@@ -788,7 +775,7 @@ def addToGroup_onClick(prevOpts,curSelGroup,groupToAdd,gAB,dcStoreGroup):
 			groupDicts.update({groupToAdd:[[],[],[]]})
 
 	gAB=0
-	return prevOpts,gAB,dcStoreGroup
+	return prevOpts,gAB,curSelGroup
 
 
 ####################################
@@ -817,9 +804,6 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 	global groupDicts
 
 	storedSymbol = selectedTicker
-	print('dcc')
-	print(storedSymbol)
-
 	if nGB == 1:
 		try:
 			newTickers = getTickersFromPortfolio(uPort,uAPIKEY)
@@ -892,15 +876,15 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 ###################################
 
 @app.callback(Output('getData-button', "n_clicks"),
-	# Output('data_feedback_container', 'children'),
+	Output("dataDictStore", 'data'),
+	Input("dataDictStore", 'data'),
 	Input("localStore", 'data'),
-	# Input("symbolStore", 'data'),
 	Input('monthData_switch', "value"),
 	Input('getData-button', "n_clicks"),
 	Input('api-entry','value'),prevent_initial_call=True)
-def getSLData(strGrp,uMnth,gdB,curAPI):	
+def getSLData(storedData,strGrp,uMnth,gdB,curAPI):	
+	# global groupDicts
 	if gdB!=0:
-		global groupDicts
 		ctickers = groupDicts[strGrp][0]
 		if len(ctickers)>0:
 			totalData = getTickerDataFromSL('{}'.format(ctickers[0]),curAPI,uMnth)			
@@ -909,12 +893,13 @@ def getSLData(strGrp,uMnth,gdB,curAPI):
 					totalData=pd.concat([totalData,getTickerDataFromSL('{}'.format(ctickers[i]),curAPI,uMnth)], axis=1)
 					totalData=totalData.fillna(method='ffill')
 					totalData=totalData.fillna(method='bfill')
-					time.sleep(0.2) 
+					time.sleep(0.5) 
 		groupDicts.update({strGrp:[ctickers,totalData,[]]})
 		techMetricData = calculateTechMetrics(groupDicts,strGrp,10)
-		groupDicts[strGrp][1]=pd.concat([groupDicts[strGrp][1], techMetricData], axis=1)
+		groupDicts[strGrp][1]=pd.concat([groupDicts[strGrp][1], techMetricData], axis=1)	
+		techScoreData = scoreTechMetrics(groupDicts,strGrp,10)
+		
 		try:
-			techScoreData = scoreTechMetrics(groupDicts,strGrp,10)
 			groupDicts[strGrp][1]=pd.concat([groupDicts[strGrp][1], techScoreData], axis=1)
 			try:
 				groupDicts[strGrp][1]=discountTechMetrics(groupDicts,strGrp,10)
@@ -922,10 +907,22 @@ def getSLData(strGrp,uMnth,gdB,curAPI):
 				print('problem discounting')
 		except:
 			print('error with scoring')
-	gdB=0
-	print('console: poll sl data')
+		
+		
+		retData={strGrp:[ctickers,groupDicts[strGrp][1].to_json(),[]]}
+		
 
-	return gdB
+		# retData=groupDicts[strGrp].copy
+		# print("i have str = {}".format(strGrp))
+		# print(retData)
+		# retData[1]=groupDicts[strGrp][1].to_json()
+		# print('retaining group data for {}'.format(strGrp))
+		
+		storedData = retData
+		
+		# retData = groupDicts
+	gdB=0
+	return gdB,storedData
 
 ###########################
 #### The Program Block ####
