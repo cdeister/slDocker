@@ -531,6 +531,7 @@ controls_a = dbc.Card(
 	[
 		html.Div(
 			[
+				dcc.Store(id='localStore', storage_type='local'),
 				dbc.Label("enter api key",key='l1'),
 				dbc.Input(id="api-entry", placeholder='', type="text",key='t1',size='sm'),
 				dbc.Label("name group"),
@@ -760,12 +761,19 @@ def plot_tickerValues2(gVal,plotWDate,plotWSmooth,smoothBin,curTicker):
 
 @app.callback(Output('group-selector', 'options'),
 	Output("groupAdd-button", "n_clicks"),
+	Output("localStore", 'data'),
 	Input('group-selector', 'options'),
 	Input('group-selector', 'value'),
 	Input('groupAdd-entry','value'),
-	Input("groupAdd-button", "n_clicks"))
-def addToGroup_onClick(prevOpts,curSelGroup,groupToAdd,gAB):
+	Input("groupAdd-button", "n_clicks"),
+	Input("localStore", 'data'),)
+def addToGroup_onClick(prevOpts,curSelGroup,groupToAdd,gAB,dcStoreGroup):
+	print('dcc')
+	print(dcStoreGroup)
 	sessionVars['lastGroup'] = curSelGroup
+	print(curSelGroup)
+	dcStoreGroup = curSelGroup
+	print(curSelGroup)
 	if gAB != 0:
 		if groupToAdd not in list(dict.fromkeys(groupDicts)):
 			groups = []
@@ -777,7 +785,7 @@ def addToGroup_onClick(prevOpts,curSelGroup,groupToAdd,gAB):
 			groupDicts.update({groupToAdd:[[],[],[]]})
 
 	gAB=0
-	return prevOpts,gAB
+	return prevOpts,gAB,dcStoreGroup
 
 
 ####################################
@@ -875,13 +883,17 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 
 @app.callback(Output('getData-button', "n_clicks"),
 	# Output('data_feedback_container', 'children'),
+	Input("localStore", 'data'),
 	Input('monthData_switch', "value"),
 	Input('getData-button', "n_clicks"),
 	Input('api-entry','value'),prevent_initial_call=True)
-def getSLData(uMnth,gdB,curAPI):	
+def getSLData(strGrp,uMnth,gdB,curAPI):	
 	if gdB!=0:
+		print('dcc')
+		print(sessionVars['lastGroup'])
+		print(strGrp)
 		global groupDicts
-		ctickers = groupDicts[sessionVars['lastGroup']][0]
+		ctickers = groupDicts[strGrp][0]
 		if len(ctickers)>0:
 			totalData = getTickerDataFromSL('{}'.format(ctickers[0]),curAPI,uMnth)			
 			if len(ctickers)>1:
@@ -890,14 +902,14 @@ def getSLData(uMnth,gdB,curAPI):
 					totalData=totalData.fillna(method='ffill')
 					totalData=totalData.fillna(method='bfill')
 					time.sleep(0.2) 
-		groupDicts.update({sessionVars['lastGroup']:[ctickers,totalData,[]]})
-		techMetricData = calculateTechMetrics(groupDicts,sessionVars['lastGroup'],10)
-		groupDicts[sessionVars['lastGroup']][1]=pd.concat([groupDicts[sessionVars['lastGroup']][1], techMetricData], axis=1)
+		groupDicts.update({strGrp:[ctickers,totalData,[]]})
+		techMetricData = calculateTechMetrics(groupDicts,strGrp,10)
+		groupDicts[strGrp][1]=pd.concat([groupDicts[strGrp][1], techMetricData], axis=1)
 		try:
-			techScoreData = scoreTechMetrics(groupDicts,sessionVars['lastGroup'],10)
-			groupDicts[sessionVars['lastGroup']][1]=pd.concat([groupDicts[sessionVars['lastGroup']][1], techScoreData], axis=1)
+			techScoreData = scoreTechMetrics(groupDicts,strGrp,10)
+			groupDicts[strGrp][1]=pd.concat([groupDicts[strGrp][1], techScoreData], axis=1)
 			try:
-				groupDicts[sessionVars['lastGroup']][1]=discountTechMetrics(groupDicts,sessionVars['lastGroup'],10)
+				groupDicts[strGrp][1]=discountTechMetrics(groupDicts,strGrp,10)
 			except:
 				print('problem discounting')
 		except:
