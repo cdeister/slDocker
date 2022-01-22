@@ -532,6 +532,7 @@ controls_a = dbc.Card(
 		html.Div(
 			[
 				dcc.Store(id='localStore', storage_type='local'),
+				dcc.Store(id='symbolStore', storage_type='local'),
 				dbc.Label("enter api key",key='l1'),
 				dbc.Input(id="api-entry", placeholder='', type="text",key='t1',size='sm'),
 				dbc.Label("name group"),
@@ -734,7 +735,7 @@ def make_corMat2(mpN):
 	Input('dateOrValues_switch','value'),
 	Input('plotSmooth_switch','value'),
 	Input('smooth_entry','value'),
-	Input('ticker-selector','value'))
+	Input("symbolStore", 'data'))
 def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker):	
 	mfig = px.line(y=[])
 	if plotWSmooth ==0:
@@ -747,7 +748,7 @@ def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker):
 	Input('dateOrValues_switch2','value'),
 	Input('plotSmooth_switch2','value'),
 	Input('smooth_entry2','value'),
-	Input('ticker-selector','value'))
+	Input("symbolStore", 'data'))
 def plot_tickerValues2(gVal,plotWDate,plotWSmooth,smoothBin,curTicker):
 	mfig = px.line(y=[])
 	if plotWSmooth ==0:
@@ -796,6 +797,7 @@ def addToGroup_onClick(prevOpts,curSelGroup,groupToAdd,gAB,dcStoreGroup):
 	Output('tickerAdd-button', "n_clicks"),
 	Output("portfolioAdd-button", "n_clicks"),
 	Output("removeSelected-button","n_clicks"),
+	Output("symbolStore", 'data'),
 
 
 	Input("tickerAdd-button", "n_clicks"),
@@ -806,10 +808,16 @@ def addToGroup_onClick(prevOpts,curSelGroup,groupToAdd,gAB,dcStoreGroup):
 	Input('portfolio-entry','value'),
 	Input('tickerAdd-entry','value'),
 	Input('ticker-selector', 'value'),
-	Input('group-selector', 'value'))
-def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicker,selectedGroup):
+	Input('group-selector', 'value'),
+	Input("symbolStore", 'data'),)
+def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicker,selectedGroup,storedSymbol):
 	# state 1: if portfolio add
 	global groupDicts
+
+	storedSymbol = selectedTicker
+	print('dcc')
+	print(storedSymbol)
+
 	if nGB == 1:
 		try:
 			newTickers = getTickersFromPortfolio(uPort,uAPIKEY)
@@ -874,7 +882,7 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 	nTB=0
 	nRB=0
 	myAPI = uAPIKEY
-	return newOptions,nTB,nGB,nRB
+	return newOptions,nTB,nGB,nRB,storedSymbol
 
 
 ###################################
