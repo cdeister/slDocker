@@ -40,7 +40,8 @@
 #	1) Ticker drop-down will not show you a placeholder if you add to a fresh group's tickers.
 #	1b) Basically the only thing that will display in the ticker drop down is whatever you select for the selected group.
 #	1c) if you want to inspect single ticker data you have to select one
-#	1c) There is a reason for this, when I am the only one to have debuged ui code like this, I leave out a degree of freedom ahead of time in order to have room to fix other bugs.
+#	1c) There is a reason for this, when I am the only one to have debuged ui code like this, 
+#		I leave out a degree of freedom ahead of time in order to have room to fix other bugs.
 #	2) You need to wait a bit after you click get data. You should see the number change below, but it will say updating in your browser's status bar. 
 #		(todo: will add feedback/progress)
 #	2a) I added a wait period in between API calls so not to throttle any limits that may exist.
@@ -618,11 +619,12 @@ graphControls_b = dbc.Card(
 							{"label": "aggTech", "value": '_aggTech'},{"label": "t_PP", "value": '_pp_score'},{"label": "t_Beta", "value": '_beta_score'},
 							{"label": "t_AcDist", "value": '_adSmooth_score'},{"label": "t_VD", "value": '_vd_score'},{"label": "t_RSI", "value": '_rsiSmooth_score'}],inline=1),
 							# labelStyle={'display': 'inline-block'}
+
 					]),
 				dbc.RadioButton(id="dateOrValues_switch2",label="x-axis date",value=False),
 				dbc.InputGroup(
 					[
-						dbc.RadioButton(id="plotSmooth_switch2",label="smooth:   ",value=False),
+						dbc.RadioButton(id="plotSmooth_switch2",label="smooth:   ",value=True),
 						dbc.Input(id="smooth_entry2", placeholder="20", value = 20, type="number",key='t22220',size='sm',min=1,inputmode="numeric"),
 					]),
 				html.Br(),
@@ -665,7 +667,7 @@ app.layout = dbc.Container(
 	Input('group-selector','value'), prevent_initial_call=True)
 def getGroupTechMetrics(tmBtnClick,selGroup):
 	global groupDicts
-	if tmBtnClick==1:
+	if tmBtnClick!=0:
 		# todo: make bin variable by user
 		techMetricData = calculateTechMetrics(groupDicts,selGroup,10)
 		groupDicts[selGroup][1]=pd.concat([groupDicts[selGroup][1], techMetricData], axis=1)
@@ -677,9 +679,8 @@ def getGroupTechMetrics(tmBtnClick,selGroup):
 	Input("score_techMet_btn", "n_clicks"),
 	Input('group-selector','value'))
 def getGroupTechScores(tmBtnClick,selGroup):
-
 	global groupDicts
-	if tmBtnClick==1:
+	if tmBtnClick!=0:
 		# todo: make bin variable by user
 		try:
 			techScoreData = scoreTechMetrics(groupDicts,selGroup,10)
@@ -690,8 +691,6 @@ def getGroupTechScores(tmBtnClick,selGroup):
 				print('problem discounting')
 		except:
 			print('error with scoring')
-
-
 	tmBtnClick=0
 	return tmBtnClick
 
@@ -701,8 +700,7 @@ def getGroupTechScores(tmBtnClick,selGroup):
 	Input('group-selector','value'))
 def make_corMat(mpN,curGroup):
 	global lastPlot1
-
-	if mpN == 1:
+	if mpN != 0:
 		try:
 			cTickers = groupDicts[curGroup][0]
 			procList=addProcedureToTickerList(cTickers,'_avg')
@@ -712,7 +710,6 @@ def make_corMat(mpN,curGroup):
 			mfig = lastPlot1
 	else:
 		mfig = lastPlot1
-
 	mpN=0
 	lastPlot1 = mfig
 	return mpN,mfig
@@ -723,7 +720,7 @@ def make_corMat(mpN,curGroup):
 	Input('group-selector','value'))
 def make_corMat2(mpN,curGroup):
 	global lastPlot3
-	if mpN == 1:
+	if mpN != 0:
 		try:
 			cTickers = groupDicts[curGroup][0]
 			procList=addProcedureToTickerList(cTickers,'_avg')
@@ -792,8 +789,7 @@ def plot_tickerValues2(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,curGroup):
 	Input("groupAdd-button", "n_clicks"))
 def addToGroup_onClick(prevOpts,groupToAdd,gAB):
 	global groupDicts
-	
-	if gAB == 1:
+	if gAB != 0:
 		if groupToAdd not in list(dict.fromkeys(groupDicts)):
 			groups = []
 			for i in np.arange(0,len(prevOpts)):
