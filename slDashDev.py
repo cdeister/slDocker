@@ -700,19 +700,13 @@ def getGroupTechScores(tmBtnClick,selGroup):
 	Input("plotMat-button","n_clicks"),
 	Input('group-selector','value'))
 def make_corMat(mpN,curGroup):
-	global lastPlot1
+	# global lastPlot1
+	mfig=px.imshow([[1, 20, 30],[20, 1, 60],[30, 60, 1]])
 	if mpN != 0:
-		try:
-			cTickers = groupDicts[curGroup][0]
-			procList=addProcedureToTickerList(cTickers,'_avg')
-			mfig = px.imshow(groupDicts[curGroup][1][procList].corr())
-			lastPlot1=mfig
-		except:
-			mfig = lastPlot1
-	else:
-		mfig = lastPlot1
+		cTickers = groupDicts[curGroup][0]
+		procList=addProcedureToTickerList(cTickers,'_avg')
+		mfig = px.imshow(groupDicts[curGroup][1][procList].corr())
 	mpN=0
-	lastPlot1 = mfig
 	return mpN,mfig
 
 @app.callback(Output("plotMat_button2","n_clicks"),
@@ -720,18 +714,11 @@ def make_corMat(mpN,curGroup):
 	Input("plotMat_button2","n_clicks"),
 	Input('group-selector','value'))
 def make_corMat2(mpN,curGroup):
-	global lastPlot3
+	mfig=px.imshow([[1, 20, 30],[20, 1, 60],[30, 60, 1]])
 	if mpN != 0:
-		try:
-			cTickers = groupDicts[curGroup][0]
-			procList=addProcedureToTickerList(cTickers,'_avg')
-			mfig = px.imshow(groupDicts[curGroup][1][procList].corr())
-			lastPlot3=mfig
-		except:
-			mfig = lastPlot3
-	else:
-		mfig = lastPlot3
-
+		cTickers = groupDicts[curGroup][0]
+		procList=addProcedureToTickerList(cTickers,'_avg')
+		mfig = px.imshow(groupDicts[curGroup][1][procList].corr())
 	mpN=0
 	lastPlot3 = mfig
 	return mpN,mfig
@@ -743,18 +730,11 @@ def make_corMat2(mpN,curGroup):
 	Input('smooth_entry','value'),
 	Input('ticker-selector','value'),
 	Input('group-selector','value'))
-def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,curGroup):
-	global groupDicts
-	global lastPlot2
-	print(gVal)
-	
+def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,curGroup):	
+	mfig = px.line(y=[])
 	if plotWSmooth ==0:
 		smoothBin = 0
-	try:
-		mfig = plotLineSingle(groupDicts,curGroup,curTicker,proc =gVal,useDate=plotWDate,smooth=smoothBin)
-		lastPlot2 = mfig
-	except:
-		mfig = lastPlot2
+	mfig = plotLineSingle(groupDicts,curGroup,curTicker,proc =gVal,useDate=plotWDate,smooth=smoothBin)
 	return mfig
 
 @app.callback(Output("plot3-graph", "figure"),
@@ -765,18 +745,10 @@ def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,curGroup):
 	Input('ticker-selector','value'),
 	Input('group-selector','value'))
 def plot_tickerValues2(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,curGroup):
-	global groupDicts
-	global lastPlot4
-	print(gVal)
-	
+	mfig = px.line(y=[])
 	if plotWSmooth ==0:
 		smoothBin = 0
-	try:
-		mfig = plotLineSingle(groupDicts,curGroup,curTicker,proc =gVal,useDate=plotWDate,smooth=smoothBin)
-		lastPlot4 = mfig
-	except:
-		mfig = lastPlot4
-
+	mfig = plotLineSingle(groupDicts,curGroup,curTicker,proc =gVal,useDate=plotWDate,smooth=smoothBin)
 	return mfig
 
 ####################################
