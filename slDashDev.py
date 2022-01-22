@@ -490,11 +490,12 @@ defaultTypes = ['ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF
 defaultIndustryID = ['ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF']
 
 tickers = ['SPY','USO','UGA','UNG','DBB','GLD','UUP','SLV','FXY','DBA','TLT']
-groups = ['macroDefault']
+initGroups = ['macroDefault']
 groupDicts = {}
 groupDicts.update({'macroDefault':[defaultGroup,[],defaultTypes]})
 
-totalData = []
+
+# totalData = []
 haveData = 0
 haveAPI = 0
 myAPI = ''
@@ -533,7 +534,7 @@ controls_a = dbc.Card(
 				
 				# html.Div(id='ticker-selector-container'),
 				dbc.Label("select group"),
-				dcc.Dropdown(id="group-selector",options=[{'label': x, 'value': x} for x in groups]),
+				dcc.Dropdown(id="group-selector",options=[{'label': x, 'value': x} for x in initGroups]),
 				dbc.Label("current group tickers"),
 				dcc.Dropdown(id="ticker-selector",options=[{'label': x, 'value': x} for x in tickers]),
 				dbc.Button("Remove Ticker", id="removeSelected-button", className="me-2", n_clicks=0,key='b2',size='sm'),
@@ -900,28 +901,22 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 	# Output('data_feedback_container', 'children'),
 	Input('monthData_switch', "value"),
 	Input('getData-button', "n_clicks"),
-	Input('ticker-selector', 'options'),
 	Input('api-entry','value'),
 	Input('group-selector','value'), prevent_initial_call=True)
-def getSLData(uMnth,gdB,prevOpts,curAPI,curGroup):	
-	if gdB==1:
-		global totalData
-		global groupDicts
-		global groups 
+def getSLData(uMnth,gdB,curAPI,curGroup):	
+	if gdB!=0:
+		global groupDicts	
 		print('console: getting data')
-		totalData=[]
-		tickers = []
-		for i in np.arange(0,len(prevOpts)):
-			tickers.append(prevOpts[i]['label'])
-		if len(tickers)>0:
-			totalData = getTickerDataFromSL('{}'.format(tickers[0]),curAPI,uMnth)			
-			if len(tickers)>1:
-				for i in np.arange(1,len(tickers)):
-					tempData = getTickerDataFromSL('{}'.format(tickers[i]),curAPI,uMnth)
-					time.sleep(0.2)
-					totalData=pd.concat([totalData,tempData], axis=1)
+		ctickers = groupDicts[curGroup][0]
+		if len(ctickers)>0:
+			totalData = getTickerDataFromSL('{}'.format(ctickers[0]),curAPI,uMnth)			
+			if len(ctickers)>1:
+				for i in np.arange(1,len(ctickers)):
+					totalData=pd.concat([totalData,getTickerDataFromSL('{}'.format(ctickers[i]),curAPI,uMnth)], axis=1)
 					totalData=totalData.fillna(method='ffill')
-		groupDicts.update({curGroup:[tickers,totalData,[]]})
+					totalData=totalData.fillna(method='bfill')
+					time.sleep(0.2) 
+		groupDicts.update({curGroup:[ctickers,totalData,[]]})
 	gdB=0
 	print('console: grabbed data')
 	return gdB
