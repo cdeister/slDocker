@@ -2,7 +2,7 @@
 ########################################################################
 ########################################################################
 ####																####
-####    slAIDevel v0.39												####
+####    slAIDevel v0.39b												####
 ####																####
 ####    The development module for testing new AI/Data Science		####
 ####    features/extensions for Stocklabs.							####
@@ -18,35 +18,7 @@
 ########################################################################
 ########################################################################
 
-# useage: Currently, 0.25 allows:
-#	0) It's limited. I have not added all the Python code we have yet. UI programing with new library == learning curve.
-#	1) you to input a StockLabs API
-#	2) make groupings of stock tickers, by entering a name in entry and clicking add.
-#	3) you can select groups
-#	4) you can manually add a ticker to each group
-#	5) you can remove tickers from a group
-#	6) you can add tickers from a StockLabs portfolio by entring its id#
-#	7) you can grab a pre-specified amount of 1min data, more flexibility pending Deister API education and/or API tweaks
-#	8) you can plot a correlation matrix of the data's avg price entries.
-#	9) you can click "Get Tech" to compute core tech score components (todo: working on sub rosa now)
-#	10) There is a default group "macroDefault" you must select this and compute its tech components first, if you want beta to be calculated.
-#	11) Tech Components for macroDefualt also needed for sub rosa. 
-#	12) Added Score Tech button, this scores the Tech Components.
-#	13) Subrosas mostly work. The only limitation ATM is consistently feeding the discounting funciton industry IDs.
-#	14) All tech score components can be plotted.
-#	15) Plot on any of two graph/matrix rows.
-#
-# current known bugs:
-#	1) Ticker drop-down will not show you a placeholder if you add to a fresh group's tickers.
-#	1b) Basically the only thing that will display in the ticker drop down is whatever you select for the selected group.
-#	1c) if you want to inspect single ticker data you have to select one
-#	1c) There is a reason for this, when I am the only one to have debuged ui code like this, 
-#		I leave out a degree of freedom ahead of time in order to have room to fix other bugs.
-#	2) You need to wait a bit after you click get data. You should see the number change below, but it will say updating in your browser's status bar. 
-#		(todo: will add feedback/progress)
-#	2a) I added a wait period in between API calls so not to throttle any limits that may exist.
-#	3) I moved to local caching of some things to make changing groups and tickers more thread-safe.
-#	3b) I expect there to be some quota issues I hit for monthly data. 
+
 
 
 ###############################
@@ -490,12 +462,6 @@ defaultGroup = ['SPY','USO','UGA','UNG','DBB','GLD','UUP','SLV','FXY','DBA','TLT
 defaultTypes = ['ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF']
 defaultIndustryID = ['ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF']
 
-# Based on REACT UI scheme, we simply have to have global variables of some sort.
-# Dash has a dcc.store for this, but being consistent about globals in dictionaries
-# is pythonic, but also easy to work with especially for exporting and importing states across sessions.
-
-# This dict will define session/ui variables and store their states.
-# todo: introduced in 0.3, so ironing out old vs. new.
 sessionVars ={'lastGroup':['macroDefault'],
 'initialTickers':['SPY','USO','UGA','UNG','DBB','GLD','UUP','SLV','FXY','DBA','TLT'],
 'defaultGroup_symbols':['SPY','USO','UGA','UNG','DBB','GLD','UUP','SLV','FXY','DBA','TLT'],
@@ -505,31 +471,18 @@ sessionVars ={'lastGroup':['macroDefault'],
 # and also the last figure. We make a dict here to refer to. 
 sessionFigures = {'mat_d':px.imshow([[1, 20, 30],[20, 1, 60],[30, 60, 1]]),'line_d':px.line(y=[])}
 
-# group dictionaries: this is the main data hub.
-# Python dictionary, addressable by group (the dict's Keys). 
-# example: groupDicts['macroDefault'] is the default macro group.
-# Each group's key, is the group's value, which is a struct that contains:
-# in order: [0] = a set of symbols/tickers, [1] = a Pandas Dataframe for data, [2] = group instrument type
-# [3] is to be implemented in/by 0.35 and will be industr(y/ies).
+
 
 groupDicts = {}
 groupDicts.update({'macroDefault':[defaultGroup,[],sessionVars['defaultGroup_instrument']]})
-
-# todo: get rid of these.
-# totalData = []
-haveData = 0
-haveAPI = 0
-myAPI = ''
 
 
 ############################
 ####	Webapp Layout	####
 ############################
 
-controls_a = dbc.Card(
-	[
-		html.Div(
-			[
+controls_a = dbc.Card([
+		html.Div([
 				dcc.Store(id='localStore', storage_type='memory'),
 				dcc.Store(id='lastGroup', storage_type='memory'),
 				dcc.Store(id='symbolStore', storage_type='memory'),
@@ -537,33 +490,23 @@ controls_a = dbc.Card(
 				dbc.Label("enter api key",key='l1'),
 				dbc.Input(id="api-entry", placeholder='', type="text",key='t1',size='sm',debounce=True),
 				dbc.Label("name group"),
-				dbc.InputGroup(
-					[
+				dbc.InputGroup([
 						dbc.Input(id="groupAdd-entry", placeholder='', type="text",key='t4',size='sm',debounce=True),
-						dbc.Button("Add", id="groupAdd-button", className="me-2", n_clicks=0,key='b1',size='sm'),
-					]),
-				
-				# html.Div(id='ticker-selector-container'),
+						dbc.Button("Add", id="groupAdd-button", className="me-2", n_clicks=0,key='b1',size='sm')]),
 				dbc.Label("select group"),
-				dcc.Dropdown(id="group-selector",options=[{'label': x, 'value': x} for x in sessionVars['lastGroup']]),
+				### Group Selector ###
+				dcc.Dropdown(id="group-selector",options=[{'label': x, 'value': x} for x in sessionVars['lastGroup']],value='macroDefault'),
 				dbc.Label("current group tickers"),
-				dcc.Dropdown(id="ticker-selector",options=[{'label': x, 'value': x} for x in sessionVars['defaultGroup_symbols']]),
+				dcc.Dropdown(id="ticker-selector",options=[{'label': x, 'value': x} for x in sessionVars['defaultGroup_symbols']],value=defaultGroup[0]),
 				dbc.Button("Remove Ticker", id="removeSelected-button", className="me-2", n_clicks=0,key='b2',size='sm'),
 				dbc.Label("grab tickers from SL portfolio"),
-				dbc.InputGroup(
-					[
+				dbc.InputGroup([
 						dbc.Input(id="portfolio-entry", placeholder="number", type="int",key='t2',size='sm',debounce=True),
-						dbc.Button("Get Port", id="portfolioAdd-button", className="me-1", n_clicks=0,key='b3',size='sm'),
-					]),
-				dbc.InputGroup(
-					[
+						dbc.Button("Get Port", id="portfolioAdd-button", className="me-1", n_clicks=0,key='b3',size='sm')]),
+				dbc.InputGroup([
 						dbc.Input(id="tickerAdd-entry", placeholder='', type="text",key='t3',size='sm',debounce=True),
-						dbc.Button("Add Single", id="tickerAdd-button", className="me-2", n_clicks=0,key='b4',size='sm'),
-					]),
-			]
-		),		
-	],
-	body=True,)
+						dbc.Button("Add Single", id="tickerAdd-button", className="me-2", n_clicks=0,key='b4',size='sm')]),
+			]),],body=True,)
 
 controls_b = dbc.Card(
 	[
@@ -807,7 +750,6 @@ def addToGroup_onClick(prevOpts,curSelGroup,groupToAdd,lastKnownGroup,gAB):
 
 	return prevOpts,curSelGroup,dispString,gAB,dcStoreGroup,lastSelected
 
-
 ####################################
 ####	Ticker List Callback	####
 ####################################
@@ -816,7 +758,8 @@ def addToGroup_onClick(prevOpts,curSelGroup,groupToAdd,lastKnownGroup,gAB):
 	Output('tickerAdd-button', "n_clicks"),
 	Output("portfolioAdd-button", "n_clicks"),
 	Output("removeSelected-button","n_clicks"),
-	Output("symbolStore", 'data'),
+
+
 	Input("tickerAdd-button", "n_clicks"),
 	Input("portfolioAdd-button", "n_clicks"),
 	Input("removeSelected-button", "n_clicks"),
@@ -825,14 +768,13 @@ def addToGroup_onClick(prevOpts,curSelGroup,groupToAdd,lastKnownGroup,gAB):
 	Input('portfolio-entry','value'),
 	Input('tickerAdd-entry','value'),
 	Input('ticker-selector', 'value'),
-	Input('group-selector', 'value'),
-	Input("symbolStore", 'data'),)
-def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicker,selectedGroup,storedSymbol):
+	Input('group-selector', 'value'))
+def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicker,selectedGroup):
 	# state 1: if portfolio add
 	global groupDicts
-
-	storedSymbol = selectedTicker
 	if nGB == 1:
+		print('s1')
+		print(selectedGroup)
 		try:
 			newTickers = getTickersFromPortfolio(uPort,uAPIKEY)
 			# see if we have some already, a dict entry may not exist
@@ -841,15 +783,27 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 				cTickers = cTickers + newTickers
 			except:
 				cTickers = newTickers
+			print(cTickers)
+			print(prevOpts)
+			# for i in np.arange(0,len(prevOpts)):
+			# 	cTickers.append(prevOpts[i]['label'])
+			# dedupe
 			cTickers=list(dict.fromkeys(cTickers))
 			newOptions=[{'label': x, 'value': x} for x in cTickers]
+
+			print(newOptions)
 			try:
+				print('isDict?')
 				groupDicts[selectedGroup][0]=cTickers
 			except:
+				print('noDict?')
 				groupDicts.update({selectedGroup:[cTickers,[],[]]})
+				print('noDict2?')
 		except:
+			print('error: failed to get new tickers')
 			newOptions = prevOpts
 	elif nTB == 1:
+		print('s2')
 		try:
 			# see if we have some already
 			try:
@@ -869,10 +823,10 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 				groupDicts.update({selectedGroup:[cTickers,[],[]]})
 
 		except:
-			
+			print('error: failed to add new ticker')
 			newOptions = prevOpts
 	elif nRB == 1:
-		
+		print('s3')
 		try:
 			cTickers = []
 			for i in np.arange(0,len(prevOpts)):
@@ -885,6 +839,7 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 			except:
 				groupDicts.update({selectedGroup:[cTickers,[],[]]})
 		except:
+			print('error: failed to remove ticker')
 			newOptions = prevOpts
 	else:
 		try:
@@ -896,7 +851,8 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 	nTB=0
 	nRB=0
 	myAPI = uAPIKEY
-	return newOptions,nTB,nGB,nRB,storedSymbol
+	return newOptions,nTB,nGB,nRB
+
 
 ###################################
 #### Get Data Callback ####
@@ -951,6 +907,7 @@ def getSLData(prevGrp,storedData,strGrp,uMnth,gdB,curAPI):
 
 		
 		storedData = retData
+		print(groupDicts[strGrp][1].info(verbose=True))
 		
 	gdB=0
 	return gdB,storedData
@@ -962,3 +919,4 @@ def getSLData(prevGrp,storedData,strGrp,uMnth,gdB,curAPI):
 # 	app.run_server(debug=True, port=8888)
 if __name__ == '__main__':
     app.run_server(debug=True)
+
