@@ -530,10 +530,10 @@ controls_a = dbc.Card(
 	[
 		html.Div(
 			[
-				dcc.Store(id='localStore', storage_type='local'),
-				dcc.Store(id='lastGroup', storage_type='local'),
-				dcc.Store(id='symbolStore', storage_type='local'),
-				dcc.Store(id='dataDictStore', storage_type='local'),
+				dcc.Store(id='localStore', storage_type='memory'),
+				dcc.Store(id='lastGroup', storage_type='memory'),
+				dcc.Store(id='symbolStore', storage_type='memory'),
+				dcc.Store(id='dataDictStore', storage_type='memory'),
 				dbc.Label("enter api key",key='l1'),
 				dbc.Input(id="api-entry", placeholder='', type="text",key='t1',size='sm'),
 				dbc.Label("name group"),
