@@ -2,7 +2,7 @@
 ########################################################################
 ########################################################################
 ####																####
-####    slAIDevel v0.39g											####
+####    slAIDevel v0.39h											####
 ####																####
 ####    The development module for testing new AI/Data Science		####
 ####    features/extensions for Stocklabs.							####
@@ -666,7 +666,7 @@ def make_corMat2(mpN,grpStr,cData):
 	Input("symbolStore", 'data'),
 	Input("localStore", 'data'),
 	Input("dataDictStore", 'data'))
-def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStrA,cData):	
+def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStr,cData):	
 	try:
 		# realKey = list(dict.fromkeys(cData))[0]
 		aData=pd.read_json(cData[grpStr][1])
@@ -688,7 +688,7 @@ def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStrA,cDa
 	Input("symbolStore", 'data'),
 	Input("localStore", 'data'),
 	Input("dataDictStore", 'data'))
-def plot_tickerValues2(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStrA,cData):	
+def plot_tickerValues2(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStr,cData):	
 	try:
 		# realKey = list(dict.fromkeys(cData))[0]
 		aData=pd.read_json(cData[grpStr][1])
