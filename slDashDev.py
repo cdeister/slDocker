@@ -2,7 +2,7 @@
 ########################################################################
 ########################################################################
 ####																####
-####    slAIDevel v0.39b												####
+####    slAIDevel v0.39d											####
 ####																####
 ####    The development module for testing new AI/Data Science		####
 ####    features/extensions for Stocklabs.							####
@@ -775,8 +775,6 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 	# global groupDicts
 	storedSymbol = selectedTicker
 	if nGB == 1:
-		print('s1')
-		print(selectedGroup)
 		try:
 			newTickers = getTickersFromPortfolio(uPort,uAPIKEY)
 			# see if we have some already, a dict entry may not exist
@@ -785,27 +783,26 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 				cTickers = cTickers + newTickers
 			except:
 				cTickers = newTickers
-			print(cTickers)
-			print(prevOpts)
+	
 			# for i in np.arange(0,len(prevOpts)):
 			# 	cTickers.append(prevOpts[i]['label'])
 			# dedupe
 			cTickers=list(dict.fromkeys(cTickers))
 			newOptions=[{'label': x, 'value': x} for x in cTickers]
 
-			print(newOptions)
+			
 			try:
-				print('isDict?')
+				
 				groupDicts[selectedGroup][0]=cTickers
 			except:
-				print('noDict?')
+				
 				groupDicts.update({selectedGroup:[cTickers,[],[]]})
-				print('noDict2?')
+				
 		except:
-			print('error: failed to get new tickers')
+			
 			newOptions = prevOpts
 	elif nTB == 1:
-		print('s2')
+		
 		try:
 			# see if we have some already
 			try:
@@ -825,10 +822,10 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 				groupDicts.update({selectedGroup:[cTickers,[],[]]})
 
 		except:
-			print('error: failed to add new ticker')
+			
 			newOptions = prevOpts
 	elif nRB == 1:
-		print('s3')
+		
 		try:
 			cTickers = []
 			for i in np.arange(0,len(prevOpts)):
@@ -841,7 +838,7 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 			except:
 				groupDicts.update({selectedGroup:[cTickers,[],[]]})
 		except:
-			print('error: failed to remove ticker')
+			
 			newOptions = prevOpts
 	else:
 		try:
@@ -909,7 +906,7 @@ def getSLData(prevGrp,storedData,strGrp,uMnth,gdB,curAPI):
 
 		
 		storedData = retData
-		print(groupDicts[strGrp][1].info(verbose=True))
+		# print(groupDicts[strGrp][1].info(verbose=True))
 		
 	gdB=0
 	return gdB,storedData
