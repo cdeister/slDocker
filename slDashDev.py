@@ -763,17 +763,31 @@ def plot_tickerValues2(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStrA,cD
 #### 	Group Entry Callback	####
 ####################################
 
-@app.callback(Output('group-selector', 'options'),
+@app.callback(
+	Output('group-selector', 'options'),
+	Output('group-selector', 'value'),
+
+	Output('groupAdd-entry','value'),
 	Output("groupAdd-button", "n_clicks"),
+	
 	Output("localStore", 'data'),
 	Output("lastGroup", 'data'),
+	
 	Input('group-selector', 'options'),
 	Input('group-selector', 'value'),
+	
 	Input('groupAdd-entry','value'),
-	Input("groupAdd-button", "n_clicks"),
-	Input("localStore", 'data'))
-def addToGroup_onClick(prevOpts,curSelGroup,groupToAdd,gAB,dcStoreGroup):
-	lastSelected = dcStoreGroup		
+	Input("localStore", 'data'),
+	Input("groupAdd-button", "n_clicks"))
+def addToGroup_onClick(prevOpts,curSelGroup,groupToAdd,lastKnownGroup,gAB):
+	# save last known group to 'lastSelected' we can use change as trigger later.
+	lastSelected = lastKnownGroup
+	# by default, set the new group to store as the current.		
+	dcStoreGroup = curSelGroup
+	# by default, leave value in entry
+	dispString = groupToAdd
+	
+	# if you actually pressed, then add the new group
 	if gAB != 0:
 		if groupToAdd not in list(dict.fromkeys(groupDicts)):
 			groups = []
@@ -784,9 +798,14 @@ def addToGroup_onClick(prevOpts,curSelGroup,groupToAdd,gAB,dcStoreGroup):
 			prevOpts=[{'label': x, 'value': x} for x in groups]
 			groupDicts.update({groupToAdd:[[],[],[]]})
 
+			# 1) now set the selectors value to the new group.
+			curSelGroup = groupToAdd
+			dcStoreGroup = groupToAdd
+			dispString = []
+
 	gAB=0
 
-	return prevOpts,gAB,curSelGroup,lastSelected
+	return prevOpts,curSelGroup,dispString,gAB,dcStoreGroup,lastSelected
 
 
 ####################################
@@ -798,8 +817,6 @@ def addToGroup_onClick(prevOpts,curSelGroup,groupToAdd,gAB,dcStoreGroup):
 	Output("portfolioAdd-button", "n_clicks"),
 	Output("removeSelected-button","n_clicks"),
 	Output("symbolStore", 'data'),
-
-
 	Input("tickerAdd-button", "n_clicks"),
 	Input("portfolioAdd-button", "n_clicks"),
 	Input("removeSelected-button", "n_clicks"),
@@ -880,7 +897,6 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 	nRB=0
 	myAPI = uAPIKEY
 	return newOptions,nTB,nGB,nRB,storedSymbol
-
 
 ###################################
 #### Get Data Callback ####
