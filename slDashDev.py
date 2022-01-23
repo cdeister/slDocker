@@ -428,7 +428,9 @@ def discountTechMetrics(dataDict,inputGroup,binWidth):
 ### UI Functions ###
 
 def plotLineSingle(dataDict, selTicker, proc, useDate=0, smooth=0):
+	
 	plotData = dataDict['{}{}'.format(selTicker,proc)]
+	
 	if useDate == 1:
 		sFig = go.Figure()
 		sFig.add_trace(go.Scatter(x=plotData.index,y=plotData.values,mode='lines',name='data'))
@@ -650,8 +652,11 @@ def make_corMat2(mpN,grpStr,cData):
 	if mpN != 0:
 		# your group may be lost
 		# realKey = list(dict.fromkeys(cData))[0]
+		
 		aData=pd.read_json(cData[grpStr][1])
+		
 		cTickers=cData[grpStr][0]
+		
 		procList=addProcedureToTickerList(cTickers,'_avg')
 		mfig = px.imshow(aData[procList].corr())
 
@@ -670,7 +675,10 @@ def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStr,cDat
 	try:
 		# realKey = list(dict.fromkeys(cData))[0]
 		aData=pd.read_json(cData[grpStr][1])
+
 		cTickers=cData[grpStr][0]
+
+
 
 		if plotWSmooth ==0:
 			smoothBin = 0
@@ -715,10 +723,8 @@ def plot_tickerValues2(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStr,cDa
 	
 	Output("localStore", 'data'),
 	Output("lastGroup", 'data'),
-	
 	Input('group-selector', 'options'),
 	Input('group-selector', 'value'),
-	
 	Input('groupAdd-entry','value'),
 	Input("localStore", 'data'),
 	Input("groupAdd-button", "n_clicks"))
@@ -769,9 +775,8 @@ def addToGroup_onClick(prevOpts,curSelGroup,groupToAdd,lastKnownGroup,gAB):
 	Input('portfolio-entry','value'),
 	Input('tickerAdd-entry','value'),
 	Input('ticker-selector', 'value'),
-	Input('group-selector', 'value'),
 	Input("localStore", 'data'),)
-def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicker,selectedGroup,curGrpMem):
+def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicker,curGrpMem):
 	# state 1: if portfolio add
 	# global groupDicts
 	storedSymbol = selectedTicker
