@@ -2,7 +2,7 @@
 ########################################################################
 ########################################################################
 ####																####
-####    slAIDevel v0.41												####
+####    slAIDevel v0.41a												####
 ####																####
 ####    The development module for testing new AI/Data Science		####
 ####    features/extensions for Stocklabs.							####
@@ -161,10 +161,6 @@ def addTickersToGroup(newTickerString,curTickerStrings,curTickerData,apiKey):
 
 def calculateTechMetrics(dataDict,macroDict,inputGrp,binWidth):
 
-	print('start tech:')
-	print(dataDict.index)
-	print(macroDict.index)
-	# often the macroData set may not matc dimensions of dataSet from group
 	macroData = macroDict
 	currentData = dataDict
 
@@ -244,22 +240,18 @@ def calculateTechMetrics(dataDict,macroDict,inputGrp,binWidth):
 	return finDF
 
 def scoreTechMetrics(dataDict,macroDict,inpGrp,instTypes,binWidth):
-	print('just got here')
 
 	# often the macroData set may not match dimensions of dataSet from group
 	macroData = macroDict
 	dataDict = dataDict.loc[macroData.index]
 
-	print('u1')
 
 	cTickers = inpGrp
 	cTypes = instTypes
 
-	print('u2')
 
 	useETF = 0
 	if inpGrp == 'macroDefault':
-		# print('using ETF')
 		useETF = 1
 
 
@@ -270,7 +262,7 @@ def scoreTechMetrics(dataDict,macroDict,inpGrp,instTypes,binWidth):
 	techmetric_accDistStr = addProcedureToTickerList(cTickers,'_adSmooth')
 	techmetric_betaStr = addProcedureToTickerList(cTickers,'_beta')
 	aggStrings = addProcedureToTickerList(cTickers,'_aggTech')
-	print('u3')
+	
 
 	pScores=dataDict[techmetric_priceStr].copy()
 	
@@ -361,20 +353,15 @@ def scoreTechMetrics(dataDict,macroDict,inpGrp,instTypes,binWidth):
 
 def discountTechMetrics(dataDict,macroDict,inputGroup,macroGroups,binWidth):
 	# this will produce a transformed version of the df
-	print('start it')
 
 	cTickers = inputGroup
 	macroTickers = macroGroups
-	print(macroDict.index)
-	print(dataDict.index)
 	macroData = macroDict.loc[dataDict.index]
 	
 	useETF=0
 	if inputGroup == 'macroDefault':
 		useETF = 1
 
-	print('etf:')
-	print(useETF)
 	fgg = addProcedureToTickerList(cTickers,'_aggTech')
 	macroPriceStrings = addProcedureToTickerList(cTickers,'_avg')
 
@@ -386,32 +373,30 @@ def discountTechMetrics(dataDict,macroDict,inputGroup,macroGroups,binWidth):
 	crackSpreadTickers = [] #14
 
 	if useETF == 0:	
-		print('aa1')
+		
 		# uso penalty: penalize if USO is >$100
 		thr_uso_1=100
 		thr_uso_2=125
 		penalty_uso = -0.1
 		eligibleTickers = list(set(cTickers).difference(set(energyIndustryTickers)))
 		scaleStrings = addProcedureToTickerList(eligibleTickers,'_aggTech')
-		print(scaleStrings)
-		print(macroData['USO_avg'].values>=thr_uso_1)
-		print(dataDict)
+	
 		
-		print(dataDict[scaleStrings])
+
 
 		dataDict[scaleStrings].iloc[(macroData['USO_avg'].values>=thr_uso_1)].add(penalty_uso)
-		print('applied USO')
+		# print('applied USO')
 
 	
 		uupScale = macroData['UUP_pp'].mul(100).div(20).mul(-1)
 		dataDict[scaleStrings].add(uupScale)
-		print('applied UUP')
+		# print('applied UUP')
 
 	
 		tltScale = macroData['TLT_pp'].div(-20)
 		dataDict[scaleStrings].add(tltScale)
-		print('applied TLT')
-	print('dooona')
+		# print('applied TLT')
+	
 	return dataDict
 
 ### UI Functions ###
@@ -909,10 +894,7 @@ def getSLData(storedData,prevGrp,strGrp,storedTickers,uMnth,curAPI,gdB):
 			techScoreData = scoreTechMetrics(totalData,macroScoreData,groupSymbols,groupInstruments,10)
 			totalData = pd.concat([totalData,techScoreData], axis=1)
 			totalData=discountTechMetrics(totalData,macroScoreData,groupSymbols,macroSymbols,10)
-			# totalData=discountTechMetrics(totalData,macroScoreData,storedTickers,macroStrs,10)
 
-		# print(totalData.to_json())
-		# {defaultGroupName:[defaultGroupName,[],defaultInstruments]}
 		storedData.update({strGrp:[storedTickers[strGrp],totalData.to_json(date_unit="ms",date_format='iso'),[],[]]})
 		
 	gdB=0
