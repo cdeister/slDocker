@@ -2,7 +2,7 @@
 ########################################################################
 ########################################################################
 ####																####
-####    slAIDevel v0.34												####
+####    slAIDevel v0.35												####
 ####																####
 ####    The development module for testing new AI/Data Science		####
 ####    features/extensions for Stocklabs.							####
@@ -45,8 +45,8 @@
 #	2) You need to wait a bit after you click get data. You should see the number change below, but it will say updating in your browser's status bar. 
 #		(todo: will add feedback/progress)
 #	2a) I added a wait period in between API calls so not to throttle any limits that may exist.
-#	3) Biggest one: Everything writes to a big pandas array, but, if you double score etc. it appends, does not replace.
-#	3a) Fix in progress, to be completed at 0.35 
+#	3) I moved to local caching of some things to make changing groups and tickers more thread-safe.
+#	3b) I expect there to be some quota issues I hit for monthly data. 
 
 
 ###############################
@@ -531,6 +531,7 @@ controls_a = dbc.Card(
 		html.Div(
 			[
 				dcc.Store(id='localStore', storage_type='local'),
+				dcc.Store(id='lastGroup', storage_type='local'),
 				dcc.Store(id='symbolStore', storage_type='local'),
 				dcc.Store(id='dataDictStore', storage_type='local'),
 				dbc.Label("enter api key",key='l1'),
@@ -672,6 +673,10 @@ app.layout = dbc.Container(
 	fluid=True,
 )
 
+
+####################################
+#### 	Plotting Callbacks		####
+####################################
 @app.callback(Output("plotMat-button","n_clicks"),
 	Output("plotM1-graph", "figure"),
 	Input("plotMat-button","n_clicks"),
@@ -719,15 +724,17 @@ def make_corMat2(mpN,grpStr,cData):
 	Input("localStore", 'data'),
 	Input("dataDictStore", 'data'))
 def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStrA,cData):	
-	mfig = px.line(y=[])
-	
-	realKey = list(dict.fromkeys(cData))[0]
-	aData=pd.read_json(cData[realKey][1])
-	cTickers=cData[realKey][0]
+	try:
+		realKey = list(dict.fromkeys(cData))[0]
+		aData=pd.read_json(cData[realKey][1])
+		cTickers=cData[realKey][0]
 
-	if plotWSmooth ==0:
-		smoothBin = 0
-	mfig = plotLineSingle(aData,curTicker,proc =gVal,useDate=plotWDate,smooth=smoothBin)
+		if plotWSmooth ==0:
+			smoothBin = 0
+		mfig = plotLineSingle(aData,curTicker,proc =gVal,useDate=plotWDate,smooth=smoothBin)
+	except:
+		mfig = px.line(y=[])
+
 	return mfig
 
 @app.callback(Output("plot3-graph", "figure"),
@@ -738,17 +745,19 @@ def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStrA,cDa
 	Input("symbolStore", 'data'),
 	Input("localStore", 'data'),
 	Input("dataDictStore", 'data'))
-def plot_tickerValues2(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStrA,cData):
-	mfig = px.line(y=[])
-	
-	realKey = list(dict.fromkeys(cData))[0]
-	aData=pd.read_json(cData[realKey][1])
-	cTickers=cData[realKey][0]
+def plot_tickerValues2(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStrA,cData):	
+	try:
+		realKey = list(dict.fromkeys(cData))[0]
+		aData=pd.read_json(cData[realKey][1])
+		cTickers=cData[realKey][0]
 
-	if plotWSmooth ==0:
-		smoothBin = 0
-	mfig = plotLineSingle(aData,curTicker,proc =gVal,useDate=plotWDate,smooth=smoothBin)
+		if plotWSmooth ==0:
+			smoothBin = 0
+		mfig = plotLineSingle(aData,curTicker,proc =gVal,useDate=plotWDate,smooth=smoothBin)
+	except:
+		mfig = px.line(y=[])
 	return mfig
+
 
 ####################################
 #### 	Group Entry Callback	####
@@ -757,13 +766,14 @@ def plot_tickerValues2(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStrA,cD
 @app.callback(Output('group-selector', 'options'),
 	Output("groupAdd-button", "n_clicks"),
 	Output("localStore", 'data'),
+	Output("lastGroup", 'data'),
 	Input('group-selector', 'options'),
 	Input('group-selector', 'value'),
 	Input('groupAdd-entry','value'),
 	Input("groupAdd-button", "n_clicks"),
 	Input("localStore", 'data'))
 def addToGroup_onClick(prevOpts,curSelGroup,groupToAdd,gAB,dcStoreGroup):
-
+	lastSelected = dcStoreGroup		
 	if gAB != 0:
 		if groupToAdd not in list(dict.fromkeys(groupDicts)):
 			groups = []
@@ -775,7 +785,8 @@ def addToGroup_onClick(prevOpts,curSelGroup,groupToAdd,gAB,dcStoreGroup):
 			groupDicts.update({groupToAdd:[[],[],[]]})
 
 	gAB=0
-	return prevOpts,gAB,curSelGroup
+
+	return prevOpts,gAB,curSelGroup,lastSelected
 
 
 ####################################
@@ -877,13 +888,24 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 
 @app.callback(Output('getData-button', "n_clicks"),
 	Output("dataDictStore", 'data'),
+	Input("lastGroup", 'data'),
 	Input("dataDictStore", 'data'),
 	Input("localStore", 'data'),
 	Input('monthData_switch', "value"),
 	Input('getData-button', "n_clicks"),
 	Input('api-entry','value'),prevent_initial_call=True)
-def getSLData(storedData,strGrp,uMnth,gdB,curAPI):	
+def getSLData(prevGrp,storedData,strGrp,uMnth,gdB,curAPI):	
 	# global groupDicts
+
+	# if we change groups, then let's try to get new data buffer if one exists.
+
+	if prevGrp != strGrp:
+		try:
+			if len(groupDicts[strGrp][1])>0:
+				storedData={strGrp:[groupDicts[strGrp][0],groupDicts[strGrp][1].to_json(),groupDicts[strGrp][2]]}
+		except:
+			1+1
+
 	if gdB!=0:
 		ctickers = groupDicts[strGrp][0]
 		if len(ctickers)>0:
@@ -910,17 +932,10 @@ def getSLData(storedData,strGrp,uMnth,gdB,curAPI):
 		
 		
 		retData={strGrp:[ctickers,groupDicts[strGrp][1].to_json(),[]]}
-		
 
-		# retData=groupDicts[strGrp].copy
-		# print("i have str = {}".format(strGrp))
-		# print(retData)
-		# retData[1]=groupDicts[strGrp][1].to_json()
-		# print('retaining group data for {}'.format(strGrp))
 		
 		storedData = retData
 		
-		# retData = groupDicts
 	gdB=0
 	return gdB,storedData
 
