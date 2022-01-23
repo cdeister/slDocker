@@ -2,7 +2,7 @@
 ########################################################################
 ########################################################################
 ####																####
-####    slAIDevel v0.39d											####
+####    slAIDevel v0.39e											####
 ####																####
 ####    The development module for testing new AI/Data Science		####
 ####    features/extensions for Stocklabs.							####
@@ -769,8 +769,9 @@ def addToGroup_onClick(prevOpts,curSelGroup,groupToAdd,lastKnownGroup,gAB):
 	Input('portfolio-entry','value'),
 	Input('tickerAdd-entry','value'),
 	Input('ticker-selector', 'value'),
-	Input('group-selector', 'value'))
-def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicker,selectedGroup):
+	Input('group-selector', 'value'),
+	Input("localStore", 'data'),)
+def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicker,selectedGroup,curGrpMem):
 	# state 1: if portfolio add
 	# global groupDicts
 	storedSymbol = selectedTicker
@@ -779,7 +780,7 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 			newTickers = getTickersFromPortfolio(uPort,uAPIKEY)
 			# see if we have some already, a dict entry may not exist
 			try:
-				cTickers = groupDicts[selectedGroup][0]
+				cTickers = groupDicts[curGrpMem][0]
 				cTickers = cTickers + newTickers
 			except:
 				cTickers = newTickers
@@ -793,10 +794,10 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 			
 			try:
 				
-				groupDicts[selectedGroup][0]=cTickers
+				groupDicts[curGrpMem][0]=cTickers
 			except:
 				
-				groupDicts.update({selectedGroup:[cTickers,[],[]]})
+				groupDicts.update({curGrpMem:[cTickers,[],[]]})
 				
 		except:
 			
@@ -806,7 +807,7 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 		try:
 			# see if we have some already
 			try:
-				cTickers = groupDicts[selectedGroup][0]
+				cTickers = groupDicts[curGrpMem][0]
 			except:
 				cTickers = []
 			for i in np.arange(0,len(prevOpts)):
@@ -817,9 +818,9 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 			cTickers=list(dict.fromkeys(cTickers))
 			newOptions=[{'label': x, 'value': x} for x in cTickers]
 			try:
-				groupDicts[selectedGroup][0]=cTickers
+				groupDicts[curGrpMem][0]=cTickers
 			except:
-				groupDicts.update({selectedGroup:[cTickers,[],[]]})
+				groupDicts.update({curGrpMem:[cTickers,[],[]]})
 
 		except:
 			
@@ -834,15 +835,15 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 			# now remove new 
 			newOptions=[{'label': x, 'value': x} for x in cTickers]
 			try:
-				groupDicts[selectedGroup][0]=cTickers
+				groupDicts[curGrpMem][0]=cTickers
 			except:
-				groupDicts.update({selectedGroup:[cTickers,[],[]]})
+				groupDicts.update({curGrpMem:[cTickers,[],[]]})
 		except:
 			
 			newOptions = prevOpts
 	else:
 		try:
-			cTickers = groupDicts[selectedGroup][0]
+			cTickers = groupDicts[curGrpMem][0]
 			newOptions=[{'label': x, 'value': x} for x in cTickers]
 		except:
 			newOptions = prevOpts
