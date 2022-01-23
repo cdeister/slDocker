@@ -2,7 +2,7 @@
 ########################################################################
 ########################################################################
 ####																####
-####    slAIDevel v0.35												####
+####    slAIDevel v0.39												####
 ####																####
 ####    The development module for testing new AI/Data Science		####
 ####    features/extensions for Stocklabs.							####
@@ -189,7 +189,7 @@ def addTickersToGroup(newTickerString,curTickerStrings,curTickerData,apiKey):
 
 def calculateTechMetrics(dataDict,inputGrp,binWidth):
 
-	print('metric debug:{}'.format(inputGrp))
+	
 	# often the macroData set may not matc dimensions of dataSet from group
 	macroData = dataDict['macroDefault'][1]
 	currentData = dataDict[inputGrp][1]
@@ -283,7 +283,7 @@ def calculateTechMetrics(dataDict,inputGrp,binWidth):
 
 	# finDF.fillna(method='ffill')
 	# finDF.fillna(method='bfill')
-	print('metrics done')
+	
 	return finDF
 
 def scoreTechMetrics(dataDict,inpGrp,binWidth):
@@ -294,7 +294,7 @@ def scoreTechMetrics(dataDict,inpGrp,binWidth):
 
 	dataDict[inpGrp][1] = dataDict[inpGrp][1].loc[macroData.index]
 
-	print('debug: scoring')
+	
 
 	cTickers = dataDict[inpGrp][0]
 	cTypes = dataDict[inpGrp][2]
@@ -302,7 +302,7 @@ def scoreTechMetrics(dataDict,inpGrp,binWidth):
 
 	useETF = 0
 	if inpGrp == 'macroDefault':
-		print('using ETF')
+		# print('using ETF')
 		useETF = 1
 
 
@@ -393,7 +393,7 @@ def scoreTechMetrics(dataDict,inpGrp,binWidth):
 	tScores=pd.DataFrame(aggScore)
 	tScores=tScores.set_index(dataDict[inpGrp][1].index)
 	tScores.columns=aggStrings
-	print('going to concat')
+	
 	finDF=pd.concat([finDF, tScores], axis=1)
 	aggScore=[]
 	tScores=[]
@@ -438,17 +438,17 @@ def discountTechMetrics(dataDict,inputGroup,binWidth):
 		eligibleTickers = list(set(cTickers).difference(set(energyIndustryTickers)))
 		scaleStrings = addProcedureToTickerList(eligibleTickers,'_aggTech')
 		dataDict[inputGroup][1][scaleStrings].iloc[(macroData['USO_avg'].values>=thr_uso_1)].add(penalty_uso)
-		print('applied USO')
+		# print('applied USO')
 
 	
 		uupScale = macroData['UUP_pp'].mul(100).div(20).mul(-1)
 		dataDict[inputGroup][1][scaleStrings].add(uupScale)
-		print('applied UUP')
+		# print('applied UUP')
 
 	
 		tltScale = macroData['TLT_pp'].div(-20)
 		dataDict[inputGroup][1][scaleStrings].add(tltScale)
-		print('applied TLT')
+		# print('applied TLT')
 
 
 	return dataDict[inputGroup][1]
@@ -535,11 +535,11 @@ controls_a = dbc.Card(
 				dcc.Store(id='symbolStore', storage_type='memory'),
 				dcc.Store(id='dataDictStore', storage_type='memory'),
 				dbc.Label("enter api key",key='l1'),
-				dbc.Input(id="api-entry", placeholder='', type="text",key='t1',size='sm'),
+				dbc.Input(id="api-entry", placeholder='', type="text",key='t1',size='sm',debounce=True),
 				dbc.Label("name group"),
 				dbc.InputGroup(
 					[
-						dbc.Input(id="groupAdd-entry", placeholder='', type="text",key='t4',size='sm'),
+						dbc.Input(id="groupAdd-entry", placeholder='', type="text",key='t4',size='sm',debounce=True),
 						dbc.Button("Add", id="groupAdd-button", className="me-2", n_clicks=0,key='b1',size='sm'),
 					]),
 				
@@ -552,12 +552,12 @@ controls_a = dbc.Card(
 				dbc.Label("grab tickers from SL portfolio"),
 				dbc.InputGroup(
 					[
-						dbc.Input(id="portfolio-entry", placeholder="number", type="int",key='t2',size='sm'),
+						dbc.Input(id="portfolio-entry", placeholder="number", type="int",key='t2',size='sm',debounce=True),
 						dbc.Button("Get Port", id="portfolioAdd-button", className="me-1", n_clicks=0,key='b3',size='sm'),
 					]),
 				dbc.InputGroup(
 					[
-						dbc.Input(id="tickerAdd-entry", placeholder='', type="text",key='t3',size='sm'),
+						dbc.Input(id="tickerAdd-entry", placeholder='', type="text",key='t3',size='sm',debounce=True),
 						dbc.Button("Add Single", id="tickerAdd-button", className="me-2", n_clicks=0,key='b4',size='sm'),
 					]),
 			]
@@ -607,7 +607,7 @@ graphControls_a = dbc.Card(
 				dbc.InputGroup(
 					[
 						dbc.RadioButton(id="plotSmooth_switch",label="smooth:   ",value=True),
-						dbc.Input(id="smooth_entry", placeholder="20", value = 20, type="number",key='t20',size='sm',min=1,inputmode="numeric"),
+						dbc.Input(id="smooth_entry", placeholder="20", value = 20, type="number",key='t20',size='sm',min=1,inputmode="numeric",debounce=True),
 					]),
 			]
 		),		
@@ -637,7 +637,7 @@ graphControls_b = dbc.Card(
 				dbc.InputGroup(
 					[
 						dbc.RadioButton(id="plotSmooth_switch2",label="smooth:   ",value=True),
-						dbc.Input(id="smooth_entry2", placeholder="20", value = 20, type="number",key='t22220',size='sm',min=1,inputmode="numeric"),
+						dbc.Input(id="smooth_entry2", placeholder="20", value = 20, type="number",key='t22220',size='sm',min=1,inputmode="numeric",debounce=True),
 					]),
 				html.Br(),
 
