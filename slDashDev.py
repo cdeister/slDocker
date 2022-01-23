@@ -758,6 +758,7 @@ def addToGroup_onClick(prevOpts,curSelGroup,groupToAdd,lastKnownGroup,gAB):
 	Output('tickerAdd-button', "n_clicks"),
 	Output("portfolioAdd-button", "n_clicks"),
 	Output("removeSelected-button","n_clicks"),
+	Output("symbolStore", 'data'),
 
 
 	Input("tickerAdd-button", "n_clicks"),
@@ -771,7 +772,8 @@ def addToGroup_onClick(prevOpts,curSelGroup,groupToAdd,lastKnownGroup,gAB):
 	Input('group-selector', 'value'))
 def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicker,selectedGroup):
 	# state 1: if portfolio add
-	global groupDicts
+	# global groupDicts
+	storedSymbol = selectedTicker
 	if nGB == 1:
 		print('s1')
 		print(selectedGroup)
@@ -851,7 +853,7 @@ def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicke
 	nTB=0
 	nRB=0
 	myAPI = uAPIKEY
-	return newOptions,nTB,nGB,nRB
+	return newOptions,nTB,nGB,nRB,storedSymbol
 
 
 ###################################
