@@ -2,7 +2,7 @@
 ########################################################################
 ########################################################################
 ####																####
-####    slAIDevel v0.41a												####
+####    slAIDevel v0.42												####
 ####																####
 ####    The development module for testing new AI/Data Science		####
 ####    features/extensions for Stocklabs.							####
@@ -466,6 +466,7 @@ controls_a = dbc.Card([
 				dcc.Store(id='symbolCurStore', storage_type='memory',data='SPY'),
 
 
+
 				dbc.Label("enter api key",key='l1'),
 				dbc.Input(id="api-entry", placeholder='', type="text",key='t1',size='sm',debounce=True),
 				dbc.Label("name group"),
@@ -477,7 +478,7 @@ controls_a = dbc.Card([
 				dcc.Dropdown(id="group-selector",options=[{'label': x, 'value': x} for x in defaultGroupsList],value=defaultGroupsList[0]),
 				dbc.Label("current group tickers"),
 				
-				dcc.Dropdown(id="ticker-selector",options=[{'label': x, 'value': x} for x in defaultSymbols],value=defaultSymbols),
+				dcc.Dropdown(id="ticker-selector",options=[{'label': x, 'value': x} for x in defaultSymbols],value=defaultSymbols[0]),
 				
 				dbc.Button("Remove Ticker", id="removeSelected-button", className="me-2", n_clicks=0,key='b2',size='sm'),
 				dbc.Label("grab tickers from SL portfolio"),
@@ -606,14 +607,18 @@ app.layout = dbc.Container(
 	Input("plotMat-button","n_clicks"),
 	Input("currentGroup", 'data'),
 	Input("dataDictStore", 'data'))
+
 def make_corMat(mpN,grpStr,cData):
 	mfig=px.imshow([[1, 20, 30],[20, 1, 60],[30, 60, 1]])
 	# this should plot whatever is in the buffer.
 	if mpN != 0:
 		# your group may be lost
 		# realKey = list(dict.fromkeys(cData))[0]
+		
 		aData=pd.read_json(cData[grpStr][1])
+		
 		cTickers=cData[grpStr][0]
+		
 		procList=addProcedureToTickerList(cTickers,'_avg')
 		mfig = px.imshow(aData[procList].corr())
 
@@ -654,7 +659,7 @@ def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStr,cDat
 	try:
 		# realKey = list(dict.fromkeys(cData))[0]
 		print(curTicker)
-		aData=pd.read_json(cData[grpStr][1])
+		aData=pd.read_json(cData[grpStr][1]).tz_convert('US/Eastern')
 		cTickers=cData[grpStr][0]
 		if plotWSmooth ==0:
 			smoothBin = 0
@@ -674,7 +679,7 @@ def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStr,cDat
 def plot_tickerValues2(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStr,cData):	
 	try:
 		# realKey = list(dict.fromkeys(cData))[0]
-		aData=pd.read_json(cData[grpStr][1])
+		aData=pd.read_json(cData[grpStr][1]).tz_convert('US/Eastern')
 		cTickers=cData[grpStr][0]
 		if plotWSmooth ==0:
 			smoothBin = 0
@@ -766,31 +771,34 @@ def addToGroup_onClick(prevOpts,curSelGroup,groupToAdd,lastKnownGroup,gAB,stored
 	Input('ticker-selector', 'value'),
 	
 	Input("currentGroup", 'data'),
+	Input("lastGroup", 'data'),
+	
 	Input("storedSymbols","data"),
 	
 	Input("tickerAdd-button", "n_clicks"),
 	Input("portfolioAdd-button", "n_clicks"),
 	Input("removeSelected-button", "n_clicks"))
 
-def on_button_click(prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicker,curGrpMem,curGrpSymbolsInMem,nTB,nGB,nRB):
+def on_button_click(prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicker,curGrpMem,lstGrpMem,curGrpSymbolsInMem,nTB,nGB,nRB):
 
 	# default is initialization, checks, or change
 	# let's always populate the list based on current group
 	# we can just overwrite prevOpts
 	# if it fails it is because we don't have symbols for the group, so we make them here.
 	desiredTicker = selectedTicker
-	
+
+
 	try:
 		newOptions=[{'label': x, 'value': x} for x in curGrpSymbolsInMem[curGrpMem]]
 		# set the value of the display to first in group
-		selectedTicker = curGrpSymbolsInMem[curGrpMem][0]
+		selectedTicker = desiredTicker
+		#curGrpSymbolsInMem[curGrpMem][0]
 
 	except:
 		curGrpSymbolsInMem.update({curGrpMem:[]})
 		newOptions=[{'label': x, 'value': x} for x in curGrpSymbolsInMem[curGrpMem]]
-		# set the value of the display to first in group
-
-		
+		selectedTicker = []
+		#set the value of the display to first in group
 
 	# state 1: is portfolio add
 	if nGB == 1:
@@ -806,6 +814,7 @@ def on_button_click(prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicker,curGrpMem,
 		curGrpSymbolsInMem[curGrpMem]=cTickers
 		# set the value of the display to first in group
 		selectedTicker = curGrpSymbolsInMem[curGrpMem][0]
+		# desiredTicker=selectedTicker
 
 	# state 2: is button add
 	elif nTB == 1:
@@ -818,7 +827,9 @@ def on_button_click(prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicker,curGrpMem,
 		# update memory
 		curGrpSymbolsInMem[curGrpMem]=cTickers
 		# set the value of the display to first in group
-		selectedTicker = curGrpSymbolsInMem[curGrpMem][0]
+		selectedTicker = newTickers[0]
+		desiredTicker=selectedTicker
+		# curGrpSymbolsInMem[curGrpMem][0]
 
 	# state 3: is remove ticker
 	elif nRB == 1:
@@ -832,13 +843,20 @@ def on_button_click(prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicker,curGrpMem,
 		curGrpSymbolsInMem[curGrpMem]=cTickers
 		# set the value of the display to first in group
 		selectedTicker = curGrpSymbolsInMem[curGrpMem][0]
+
+	# else:
+	# 	newOptions = prevOpts
+
 		
+	print('i think I am currently {}'.format(selectedTicker))
 	print('i think it is {}'.format(desiredTicker))
+	print('i think it is {}'.format(curGrpMem))
+	print('i think it is {}'.format(lstGrpMem))
 	nGB=0
 	nTB=0
 	nRB=0
 
-	return newOptions,selectedTicker,curGrpSymbolsInMem,nTB,nGB,nRB,desiredTicker
+	return newOptions,desiredTicker,curGrpSymbolsInMem,nTB,nGB,nRB,selectedTicker
 
 
 ###################################
