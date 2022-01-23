@@ -2,7 +2,7 @@
 ########################################################################
 ########################################################################
 ####																####
-####    slAIDevel v0.39h											####
+####    slAIDevel v0.41												####
 ####																####
 ####    The development module for testing new AI/Data Science		####
 ####    features/extensions for Stocklabs.							####
@@ -159,30 +159,23 @@ def addTickersToGroup(newTickerString,curTickerStrings,curTickerData,apiKey):
 	addTicker=[]
 	return curTickerStrings, curTickerData
 
-def calculateTechMetrics(dataDict,inputGrp,binWidth):
+def calculateTechMetrics(dataDict,macroDict,inputGrp,binWidth):
 
-	
+	print('start tech:')
+	print(dataDict.index)
+	print(macroDict.index)
 	# often the macroData set may not matc dimensions of dataSet from group
-	macroData = dataDict['macroDefault'][1]
-	currentData = dataDict[inputGrp][1]
+	macroData = macroDict
+	currentData = dataDict
+
+
 	currentData = currentData.loc[macroData.index]
+
 	
 
-	if np.shape(macroData)[0]>np.shape(currentData)[0]:
-		macroData=macroData.loc[currentData.index]
-	elif np.shape(macroData)[0]<np.shape(currentData)[0]:
-		currentData=currentData.loc[macroData.index]
-		macroData.fillna(method='ffill')
-		macroData.fillna(method='bfill')
-		currentData.fillna(method='ffill')
-		currentData.fillna(method='bfill')
+	cTickers = inputGrp
 
 
-	# This will return pandas data suitable to add to the globalDict for the group
-	# in your procedures. 
-
-	# get pandas strings for components for all symbols in our group
-	cTickers = dataDict[inputGrp][0]	
 	avgPriceStrs = addProcedureToTickerList(cTickers,'_avg')
 	volumeeStrs = addProcedureToTickerList(cTickers,'_volume')
 	adStrs = addProcedureToTickerList(cTickers,'_ad')
@@ -195,7 +188,6 @@ def calculateTechMetrics(dataDict,inputGrp,binWidth):
 	avgPrices.iloc[0:binWidth-1]=avgPrices.iloc[binWidth]
 	avgVolume=currentData[volumeeStrs].rolling(binWidth).mean()
 	avgVolume.iloc[0:binWidth-1]=avgVolume.iloc[binWidth]
-
 	#get price performance, avgPrices is ahead of incoming data by a binWidth
 	techmetric_price = currentData[avgPriceStrs].div(avgPrices).sub(1)
 	techmetric_volDelta = currentData[volumeeStrs].div(avgVolume).sub(1)
@@ -209,10 +201,6 @@ def calculateTechMetrics(dataDict,inputGrp,binWidth):
 	techmetric_RSI=(100-(100/(rs_RS.add(1))))
 	techmetric_smRSI=techmetric_RSI.ewm(binWidth).mean().rolling(binWidth,win_type='gaussian').mean(std=binWidth)
 	techmetric_smRSI.iloc[0:binWidth-1]=techmetric_smRSI.iloc[binWidth]
-
-	# # todo: beta! we need market vector to be consistent per group
-
-
 
 	# accum/dist
 	techmetric_accDist=currentData[adStrs].rolling(binWidth).mean()
@@ -232,19 +220,16 @@ def calculateTechMetrics(dataDict,inputGrp,binWidth):
 	
 	# beta is a special case that need macroDefault to have data already.
 	try:
-
-
-		# macroAvgPriceStrs = addProcedureToTickerList(dataDict['macroDefault'][0],'_avg')
 		
 		bc1=currentData[avgPriceStrs].rolling(binWidth).mean()
 		bc1.iloc[0:binWidth-1]=bc1.iloc[binWidth]
 		bc2=macroData['SPY_avg'].rolling(binWidth).mean()
 		bc2.iloc[0:binWidth-1]=bc2.iloc[binWidth]
+		
 
 
 		techmetric_beta=bc1.rolling(binWidth).cov(bc2)
-		techmetric_beta.iloc[0:binWidth-1]=techmetric_beta.iloc[binWidth]
-		
+		techmetric_beta.iloc[0:binWidth-1]=techmetric_beta.iloc[binWidth]	
 		techmetric_beta.columns = addProcedureToTickerList(cTickers,'_beta')
 
 		finDF=pd.concat([finDF, techmetric_beta], axis=1)
@@ -258,19 +243,19 @@ def calculateTechMetrics(dataDict,inputGrp,binWidth):
 	
 	return finDF
 
-def scoreTechMetrics(dataDict,inpGrp,binWidth):
+def scoreTechMetrics(dataDict,macroDict,inpGrp,instTypes,binWidth):
+	print('just got here')
 
 	# often the macroData set may not match dimensions of dataSet from group
-	macroData = dataDict['macroDefault'][1]
-	
+	macroData = macroDict
+	dataDict = dataDict.loc[macroData.index]
 
-	dataDict[inpGrp][1] = dataDict[inpGrp][1].loc[macroData.index]
+	print('u1')
 
-	
+	cTickers = inpGrp
+	cTypes = instTypes
 
-	cTickers = dataDict[inpGrp][0]
-	cTypes = dataDict[inpGrp][2]
-
+	print('u2')
 
 	useETF = 0
 	if inpGrp == 'macroDefault':
@@ -285,38 +270,38 @@ def scoreTechMetrics(dataDict,inpGrp,binWidth):
 	techmetric_accDistStr = addProcedureToTickerList(cTickers,'_adSmooth')
 	techmetric_betaStr = addProcedureToTickerList(cTickers,'_beta')
 	aggStrings = addProcedureToTickerList(cTickers,'_aggTech')
+	print('u3')
 
-
-	pScores=dataDict[inpGrp][1][techmetric_priceStr].copy()
+	pScores=dataDict[techmetric_priceStr].copy()
 	
 	if useETF == 1:
-		pScores.iloc[dataDict[inpGrp][1][techmetric_priceStr].values<=0.001]=1
-		pScores.iloc[(dataDict[inpGrp][1][techmetric_priceStr].values>0.001) & (dataDict[inpGrp][1][techmetric_priceStr].values<=0.05)]=2
-		pScores.iloc[(dataDict[inpGrp][1][techmetric_priceStr].values>0.05) & (dataDict[inpGrp][1][techmetric_priceStr].values<=0.10)]=3
-		pScores.iloc[(dataDict[inpGrp][1][techmetric_priceStr].values>0.10) & (dataDict[inpGrp][1][techmetric_priceStr].values<=0.15)]=4
-		pScores.iloc[(dataDict[inpGrp][1][techmetric_priceStr].values>0.15)]=5
+		pScores.iloc[dataDict[techmetric_priceStr].values<=0.001]=1
+		pScores.iloc[(dataDict[techmetric_priceStr].values>0.001) & (dataDict[techmetric_priceStr].values<=0.05)]=2
+		pScores.iloc[(dataDict[techmetric_priceStr].values>0.05) & (dataDict[techmetric_priceStr].values<=0.10)]=3
+		pScores.iloc[(dataDict[techmetric_priceStr].values>0.10) & (dataDict[techmetric_priceStr].values<=0.15)]=4
+		pScores.iloc[(dataDict[techmetric_priceStr].values>0.15)]=5
 		pScores.columns = addProcedureToTickerList(cTickers,'_pp_score')
 
 		aggScore = pScores.mul(0.3).values
 
 	else:
-		pScores.iloc[dataDict[inpGrp][1][techmetric_priceStr].values<=0.01]=1
-		pScores.iloc[(dataDict[inpGrp][1][techmetric_priceStr].values>0.01) & (dataDict[inpGrp][1][techmetric_priceStr].values<=0.05)]=2
-		pScores.iloc[(dataDict[inpGrp][1][techmetric_priceStr].values>0.05) & (dataDict[inpGrp][1][techmetric_priceStr].values<=0.10)]=3
-		pScores.iloc[(dataDict[inpGrp][1][techmetric_priceStr].values>0.10) & (dataDict[inpGrp][1][techmetric_priceStr].values<=0.15)]=4
-		pScores.iloc[(dataDict[inpGrp][1][techmetric_priceStr].values>0.15)]=5
+		pScores.iloc[dataDict[techmetric_priceStr].values<=0.01]=1
+		pScores.iloc[(dataDict[techmetric_priceStr].values>0.01) & (dataDict[techmetric_priceStr].values<=0.05)]=2
+		pScores.iloc[(dataDict[techmetric_priceStr].values>0.05) & (dataDict[techmetric_priceStr].values<=0.10)]=3
+		pScores.iloc[(dataDict[techmetric_priceStr].values>0.10) & (dataDict[techmetric_priceStr].values<=0.15)]=4
+		pScores.iloc[(dataDict[techmetric_priceStr].values>0.15)]=5
 		pScores.columns = addProcedureToTickerList(cTickers,'_pp_score')
 		aggScore = pScores.mul(0.3).values
 
 
 
 
-	RSIScores=dataDict[inpGrp][1][techmetric_smRSIStr].copy()
-	RSIScores.iloc[dataDict[inpGrp][1][techmetric_smRSIStr].values<=60]=1
-	RSIScores.iloc[(dataDict[inpGrp][1][techmetric_smRSIStr].values>60) & (dataDict[inpGrp][1][techmetric_smRSIStr].values<=80)]=2
-	RSIScores.iloc[(dataDict[inpGrp][1][techmetric_smRSIStr].values>80) & (dataDict[inpGrp][1][techmetric_smRSIStr].values<=90)]=3
-	RSIScores.iloc[(dataDict[inpGrp][1][techmetric_smRSIStr].values>90) & (dataDict[inpGrp][1][techmetric_smRSIStr].values<=95)]=4
-	RSIScores.iloc[(dataDict[inpGrp][1][techmetric_smRSIStr].values>95)]=5
+	RSIScores=dataDict[techmetric_smRSIStr].copy()
+	RSIScores.iloc[dataDict[techmetric_smRSIStr].values<=60]=1
+	RSIScores.iloc[(dataDict[techmetric_smRSIStr].values>60) & (dataDict[techmetric_smRSIStr].values<=80)]=2
+	RSIScores.iloc[(dataDict[techmetric_smRSIStr].values>80) & (dataDict[techmetric_smRSIStr].values<=90)]=3
+	RSIScores.iloc[(dataDict[techmetric_smRSIStr].values>90) & (dataDict[techmetric_smRSIStr].values<=95)]=4
+	RSIScores.iloc[(dataDict[techmetric_smRSIStr].values>95)]=5
 
 	RSIScores.columns = addProcedureToTickerList(cTickers,'_rsiSmooth_score')
 	# start cleaning up for memory use etc. 
@@ -325,37 +310,37 @@ def scoreTechMetrics(dataDict,inpGrp,binWidth):
 	pScores=[]
 	RSIScores=[]
 
-	ADScores=dataDict[inpGrp][1][techmetric_accDistStr].copy()
-	ADScores.iloc[dataDict[inpGrp][1][techmetric_accDistStr].values<=0.50]=1
-	ADScores.iloc[(dataDict[inpGrp][1][techmetric_accDistStr].values>0.50) & (dataDict[inpGrp][1][techmetric_accDistStr].values<=0.75)]=2
-	ADScores.iloc[(dataDict[inpGrp][1][techmetric_accDistStr].values>0.75) & (dataDict[inpGrp][1][techmetric_accDistStr].values<=0.85)]=3
-	ADScores.iloc[(dataDict[inpGrp][1][techmetric_accDistStr].values>0.85) & (dataDict[inpGrp][1][techmetric_accDistStr].values<=0.95)]=4
-	ADScores.iloc[(dataDict[inpGrp][1][techmetric_accDistStr].values>0.95)]=5
+	ADScores=dataDict[techmetric_accDistStr].copy()
+	ADScores.iloc[dataDict[techmetric_accDistStr].values<=0.50]=1
+	ADScores.iloc[(dataDict[techmetric_accDistStr].values>0.50) & (dataDict[techmetric_accDistStr].values<=0.75)]=2
+	ADScores.iloc[(dataDict[techmetric_accDistStr].values>0.75) & (dataDict[techmetric_accDistStr].values<=0.85)]=3
+	ADScores.iloc[(dataDict[techmetric_accDistStr].values>0.85) & (dataDict[techmetric_accDistStr].values<=0.95)]=4
+	ADScores.iloc[(dataDict[techmetric_accDistStr].values>0.95)]=5
 	ADScores.columns = addProcedureToTickerList(cTickers,'_adSmooth_score')
 	finDF=pd.concat([finDF, ADScores], axis=1)
 	aggScore = aggScore + ADScores.mul(0.5).values	
 	ADScores=[]
 
-	betaScores=dataDict[inpGrp][1][techmetric_betaStr].copy()
+	betaScores=dataDict[techmetric_betaStr].copy()
 
-	betaScores.iloc[dataDict[inpGrp][1][techmetric_betaStr].values<=0.75]=1
-	betaScores.iloc[(dataDict[inpGrp][1][techmetric_betaStr].values>0.75) & (dataDict[inpGrp][1][techmetric_betaStr].values<=1.00)]=2
-	betaScores.iloc[(dataDict[inpGrp][1][techmetric_betaStr].values>1.00) & (dataDict[inpGrp][1][techmetric_betaStr].copy().values<=2.00)]=3
-	betaScores.iloc[(dataDict[inpGrp][1][techmetric_betaStr].values>2.00) & (dataDict[inpGrp][1][techmetric_betaStr].copy().values<=2.50)]=4
-	betaScores.iloc[(dataDict[inpGrp][1][techmetric_betaStr].values>2.50)]=5
+	betaScores.iloc[dataDict[techmetric_betaStr].values<=0.75]=1
+	betaScores.iloc[(dataDict[techmetric_betaStr].values>0.75) & (dataDict[techmetric_betaStr].values<=1.00)]=2
+	betaScores.iloc[(dataDict[techmetric_betaStr].values>1.00) & (dataDict[techmetric_betaStr].copy().values<=2.00)]=3
+	betaScores.iloc[(dataDict[techmetric_betaStr].values>2.00) & (dataDict[techmetric_betaStr].copy().values<=2.50)]=4
+	betaScores.iloc[(dataDict[techmetric_betaStr].values>2.50)]=5
 
 	betaScores.columns = addProcedureToTickerList(cTickers,'_beta_score')
 	finDF=pd.concat([finDF, betaScores], axis=1)
 	aggScore = aggScore + betaScores.mul(0.05).values
 	betaScores=[]
 
-	volumeScores=dataDict[inpGrp][1][techmetric_volDeltaStr].copy()
+	volumeScores=dataDict[techmetric_volDeltaStr].copy()
 
-	volumeScores.iloc[dataDict[inpGrp][1][techmetric_volDeltaStr].values<=0.75]=1
-	volumeScores.iloc[(dataDict[inpGrp][1][techmetric_volDeltaStr].values>0.75) & (dataDict[inpGrp][1][techmetric_volDeltaStr].values<=1.00)]=2
-	volumeScores.iloc[(dataDict[inpGrp][1][techmetric_volDeltaStr].values>1.00) & (dataDict[inpGrp][1][techmetric_volDeltaStr].values<=1.50)]=3
-	volumeScores.iloc[(dataDict[inpGrp][1][techmetric_volDeltaStr].values>1.50) & (dataDict[inpGrp][1][techmetric_volDeltaStr].values<=2.00)]=4
-	volumeScores.iloc[(dataDict[inpGrp][1][techmetric_volDeltaStr].values>2.00)]=5
+	volumeScores.iloc[dataDict[techmetric_volDeltaStr].values<=0.75]=1
+	volumeScores.iloc[(dataDict[techmetric_volDeltaStr].values>0.75) & (dataDict[techmetric_volDeltaStr].values<=1.00)]=2
+	volumeScores.iloc[(dataDict[techmetric_volDeltaStr].values>1.00) & (dataDict[techmetric_volDeltaStr].values<=1.50)]=3
+	volumeScores.iloc[(dataDict[techmetric_volDeltaStr].values>1.50) & (dataDict[techmetric_volDeltaStr].values<=2.00)]=4
+	volumeScores.iloc[(dataDict[techmetric_volDeltaStr].values>2.00)]=5
 
 	volumeScores.columns = addProcedureToTickerList(cTickers,'_vd_score')
 	finDF=pd.concat([finDF, volumeScores], axis=1)
@@ -363,7 +348,7 @@ def scoreTechMetrics(dataDict,inpGrp,binWidth):
 	
 	volumeScores=[]
 	tScores=pd.DataFrame(aggScore)
-	tScores=tScores.set_index(dataDict[inpGrp][1].index)
+	tScores=tScores.set_index(dataDict.index)
 	tScores.columns=aggStrings
 	
 	finDF=pd.concat([finDF, tScores], axis=1)
@@ -374,28 +359,26 @@ def scoreTechMetrics(dataDict,inpGrp,binWidth):
 	finDF.fillna(method='bfill')
 	return finDF
 
-def discountTechMetrics(dataDict,inputGroup,binWidth):
+def discountTechMetrics(dataDict,macroDict,inputGroup,macroGroups,binWidth):
 	# this will produce a transformed version of the df
+	print('start it')
 
-	cTickers = dataDict[inputGroup][0]
-	macroTickers = dataDict['macroDefault'][0]
-	macroData = dataDict['macroDefault'][1].loc[dataDict[inputGroup][1].index]
-
-	macroData = dataDict['macroDefault'][1]
+	cTickers = inputGroup
+	macroTickers = macroGroups
+	print(macroDict.index)
+	print(dataDict.index)
+	macroData = macroDict.loc[dataDict.index]
 	
-
-	dataDict[inputGroup][1] = dataDict[inputGroup][1].loc[macroData.index]
-
-
-
 	useETF=0
 	if inputGroup == 'macroDefault':
 		useETF = 1
 
-	
+	print('etf:')
+	print(useETF)
 	fgg = addProcedureToTickerList(cTickers,'_aggTech')
 	macroPriceStrings = addProcedureToTickerList(cTickers,'_avg')
-	
+
+
 
 	energyIndustryTickers = []
 	commodityIndustryTickers = []
@@ -403,34 +386,38 @@ def discountTechMetrics(dataDict,inputGroup,binWidth):
 	crackSpreadTickers = [] #14
 
 	if useETF == 0:	
+		print('aa1')
 		# uso penalty: penalize if USO is >$100
 		thr_uso_1=100
 		thr_uso_2=125
 		penalty_uso = -0.1
 		eligibleTickers = list(set(cTickers).difference(set(energyIndustryTickers)))
 		scaleStrings = addProcedureToTickerList(eligibleTickers,'_aggTech')
-		dataDict[inputGroup][1][scaleStrings].iloc[(macroData['USO_avg'].values>=thr_uso_1)].add(penalty_uso)
-		# print('applied USO')
+		print(scaleStrings)
+		print(macroData['USO_avg'].values>=thr_uso_1)
+		print(dataDict)
+		
+		print(dataDict[scaleStrings])
+
+		dataDict[scaleStrings].iloc[(macroData['USO_avg'].values>=thr_uso_1)].add(penalty_uso)
+		print('applied USO')
 
 	
 		uupScale = macroData['UUP_pp'].mul(100).div(20).mul(-1)
-		dataDict[inputGroup][1][scaleStrings].add(uupScale)
-		# print('applied UUP')
+		dataDict[scaleStrings].add(uupScale)
+		print('applied UUP')
 
 	
 		tltScale = macroData['TLT_pp'].div(-20)
-		dataDict[inputGroup][1][scaleStrings].add(tltScale)
-		# print('applied TLT')
-
-
-	return dataDict[inputGroup][1]
+		dataDict[scaleStrings].add(tltScale)
+		print('applied TLT')
+	print('dooona')
+	return dataDict
 
 ### UI Functions ###
 
-def plotLineSingle(dataDict, selTicker, proc, useDate=0, smooth=0):
-	
+def plotLineSingle(dataDict, selTicker, proc, useDate=0, smooth=0):	
 	plotData = dataDict['{}{}'.format(selTicker,proc)]
-	
 	if useDate == 1:
 		sFig = go.Figure()
 		sFig.add_trace(go.Scatter(x=plotData.index,y=plotData.values,mode='lines',name='data'))
@@ -460,24 +447,21 @@ def makeListDict(list,label='a'):
 	return listDict
 
 # todo: get rid of these
-defaultGroup = ['SPY','USO','UGA','UNG','DBB','GLD','UUP','SLV','FXY','DBA','TLT']
-defaultTypes = ['ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF']
+defaultSymbols = ['SPY','USO','UGA','UNG','DBB','GLD','UUP','SLV','FXY','DBA','TLT']
+defaultInstruments = ['ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF']
 defaultIndustryID = ['ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF']
+defaultGroupName = 'macroDefault'
+defaultGroupsList = ['macroDefault']
 
-sessionVars ={'lastGroup':['macroDefault'],
-'initialTickers':['SPY','USO','UGA','UNG','DBB','GLD','UUP','SLV','FXY','DBA','TLT'],
-'defaultGroup_symbols':['SPY','USO','UGA','UNG','DBB','GLD','UUP','SLV','FXY','DBA','TLT'],
-'defaultGroup_instrument':['ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF','ETF']}
-
-# to make graphing more consistent, it helps to have a default to return to if confused
-# and also the last figure. We make a dict here to refer to. 
-sessionFigures = {'mat_d':px.imshow([[1, 20, 30],[20, 1, 60],[30, 60, 1]]),'line_d':px.line(y=[])}
+# todo: make figure dict in memory
+#sessionFigures = {'fig1':fig1}
 
 
+# initial dictionary
+# key is group name, value is struct --> [groupName,data,instrumentTypes,industries]
 
 groupDicts = {}
-groupDicts.update({'macroDefault':[defaultGroup,[],sessionVars['defaultGroup_instrument']]})
-
+groupDicts.update({defaultGroupName:[defaultGroupName,[],defaultInstruments]})
 
 ############################
 ####	Webapp Layout	####
@@ -485,10 +469,18 @@ groupDicts.update({'macroDefault':[defaultGroup,[],sessionVars['defaultGroup_ins
 
 controls_a = dbc.Card([
 		html.Div([
-				dcc.Store(id='localStore', storage_type='memory'),
-				dcc.Store(id='lastGroup', storage_type='memory'),
-				dcc.Store(id='symbolStore', storage_type='memory'),
-				dcc.Store(id='dataDictStore', storage_type='memory'),
+				
+				
+				dcc.Store(id='currentGroup', storage_type='memory',),
+				dcc.Store(id='lastGroup', storage_type='memory',),
+				#symbolStore is current symbol, it needs to change when group changes.
+				# dcc.Store(id='symbolStore', storage_type='memory'),
+				dcc.Store(id='dataDictStore', storage_type='memory',data = {defaultGroupName:[defaultSymbols,[],defaultInstruments,defaultIndustryID]}),
+				dcc.Store(id='storedGroups', storage_type='memory',data=defaultGroupsList),
+				dcc.Store(id='storedSymbols', storage_type='memory',data={defaultGroupName:defaultSymbols}),
+				dcc.Store(id='symbolCurStore', storage_type='memory',data='SPY'),
+
+
 				dbc.Label("enter api key",key='l1'),
 				dbc.Input(id="api-entry", placeholder='', type="text",key='t1',size='sm',debounce=True),
 				dbc.Label("name group"),
@@ -497,9 +489,11 @@ controls_a = dbc.Card([
 						dbc.Button("Add", id="groupAdd-button", className="me-2", n_clicks=0,key='b1',size='sm')]),
 				dbc.Label("select group"),
 				### Group Selector ###
-				dcc.Dropdown(id="group-selector",options=[{'label': x, 'value': x} for x in sessionVars['lastGroup']],value='macroDefault'),
+				dcc.Dropdown(id="group-selector",options=[{'label': x, 'value': x} for x in defaultGroupsList],value=defaultGroupsList[0]),
 				dbc.Label("current group tickers"),
-				dcc.Dropdown(id="ticker-selector",options=[{'label': x, 'value': x} for x in sessionVars['defaultGroup_symbols']],value=defaultGroup[0]),
+				
+				dcc.Dropdown(id="ticker-selector",options=[{'label': x, 'value': x} for x in defaultSymbols],value=defaultSymbols),
+				
 				dbc.Button("Remove Ticker", id="removeSelected-button", className="me-2", n_clicks=0,key='b2',size='sm'),
 				dbc.Label("grab tickers from SL portfolio"),
 				dbc.InputGroup([
@@ -625,7 +619,7 @@ app.layout = dbc.Container(
 @app.callback(Output("plotMat-button","n_clicks"),
 	Output("plotM1-graph", "figure"),
 	Input("plotMat-button","n_clicks"),
-	Input("localStore", 'data'),
+	Input("currentGroup", 'data'),
 	Input("dataDictStore", 'data'))
 def make_corMat(mpN,grpStr,cData):
 	mfig=px.imshow([[1, 20, 30],[20, 1, 60],[30, 60, 1]])
@@ -644,8 +638,8 @@ def make_corMat(mpN,grpStr,cData):
 @app.callback(Output("plotMat_button2","n_clicks"),
 	Output("plotM2-graph", "figure"),
 	Input("plotMat_button2","n_clicks"),
-	Input("localStore", 'data'),
-	Input("dataDictStore", 'data'))
+	Input("currentGroup", 'data'),
+	Input("dataDictStore", 'data'),)
 def make_corMat2(mpN,grpStr,cData):
 	mfig=px.imshow([[1, 20, 30],[20, 1, 60],[30, 60, 1]])
 	# this should plot whatever is in the buffer.
@@ -668,24 +662,20 @@ def make_corMat2(mpN,grpStr,cData):
 	Input('dateOrValues_switch','value'),
 	Input('plotSmooth_switch','value'),
 	Input('smooth_entry','value'),
-	Input("symbolStore", 'data'),
-	Input("localStore", 'data'),
+	Input("symbolCurStore","data"),
+	Input("currentGroup", 'data'),
 	Input("dataDictStore", 'data'))
 def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStr,cData):	
 	try:
 		# realKey = list(dict.fromkeys(cData))[0]
+		print(curTicker)
 		aData=pd.read_json(cData[grpStr][1])
-
 		cTickers=cData[grpStr][0]
-
-
-
 		if plotWSmooth ==0:
 			smoothBin = 0
 		mfig = plotLineSingle(aData,curTicker,proc =gVal,useDate=plotWDate,smooth=smoothBin)
 	except:
 		mfig = px.line(y=[])
-
 	return mfig
 
 @app.callback(Output("plot3-graph", "figure"),
@@ -693,15 +683,14 @@ def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStr,cDat
 	Input('dateOrValues_switch2','value'),
 	Input('plotSmooth_switch2','value'),
 	Input('smooth_entry2','value'),
-	Input("symbolStore", 'data'),
-	Input("localStore", 'data'),
+	Input("symbolCurStore","data"),
+	Input("currentGroup", 'data'),
 	Input("dataDictStore", 'data'))
 def plot_tickerValues2(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStr,cData):	
 	try:
 		# realKey = list(dict.fromkeys(cData))[0]
 		aData=pd.read_json(cData[grpStr][1])
 		cTickers=cData[grpStr][0]
-
 		if plotWSmooth ==0:
 			smoothBin = 0
 		mfig = plotLineSingle(aData,curTicker,proc =gVal,useDate=plotWDate,smooth=smoothBin)
@@ -721,198 +710,210 @@ def plot_tickerValues2(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStr,cDa
 	Output('groupAdd-entry','value'),
 	Output("groupAdd-button", "n_clicks"),
 	
-	Output("localStore", 'data'),
+	Output("currentGroup", 'data'),
 	Output("lastGroup", 'data'),
+	Output("storedGroups", 'data'),
+	
 	Input('group-selector', 'options'),
 	Input('group-selector', 'value'),
 	Input('groupAdd-entry','value'),
-	Input("localStore", 'data'),
-	Input("groupAdd-button", "n_clicks"))
-def addToGroup_onClick(prevOpts,curSelGroup,groupToAdd,lastKnownGroup,gAB):
-	# save last known group to 'lastSelected' we can use change as trigger later.
+	Input("currentGroup", 'data'),
+	Input("groupAdd-button", "n_clicks"),
+	Input("storedGroups", 'data'),)
+
+def addToGroup_onClick(prevOpts,curSelGroup,groupToAdd,lastKnownGroup,gAB,storedGrps):
+	
+	# store last group in memory before anything.
 	lastSelected = lastKnownGroup
-	# by default, set the new group to store as the current.		
+	# store what we just selected as the current group in memory.
 	dcStoreGroup = curSelGroup
-	# by default, leave value in entry
+	# remember what the string state was.
 	dispString = groupToAdd
 	
 	# if you actually pressed, then add the new group
 	if gAB != 0:
-		if groupToAdd not in list(dict.fromkeys(groupDicts)):
-			groups = []
-			for i in np.arange(0,len(prevOpts)):
-				groups.append(prevOpts[i]['label'])
-			groups = groups + [groupToAdd]
-			groups=list(dict.fromkeys(groups))
-			prevOpts=[{'label': x, 'value': x} for x in groups]
-			groupDicts.update({groupToAdd:[[],[],[]]})
-
-			# 1) now set the selectors value to the new group.
-			curSelGroup = groupToAdd
-			dcStoreGroup = groupToAdd
-			dispString = []
+		tempGroups = []
+		for i in np.arange(0,len(prevOpts)):
+			tempGroups.append(prevOpts[i]['label'])
+		
+		# prevent dupes.			
+		tempGroups = tempGroups + [groupToAdd]
+		tempGroups=list(dict.fromkeys(tempGroups))
+		
+		prevOpts=[{'label': x, 'value': x} for x in tempGroups]
+		# now store total groups in memory, including new one.
+		storedGrps=tempGroups
+		# make the currently selected group the one you just added.
+		curSelGroup = groupToAdd
+		# store that change in memory.
+		dcStoreGroup = groupToAdd
+		# and deleted the entry string, because we are done.
+		dispString = []
 
 	gAB=0
 
-	return prevOpts,curSelGroup,dispString,gAB,dcStoreGroup,lastSelected
+	return prevOpts,curSelGroup,dispString,gAB,dcStoreGroup,lastSelected,storedGrps
 
 ####################################
 ####	Ticker List Callback	####
 ####################################
 
-@app.callback(Output('ticker-selector', 'options'),
+@app.callback(
+	# what the ticker box currently is rendering
+	Output('ticker-selector', 'options'),
+	Output('ticker-selector', 'value'),
+	# what symbols we should have for current group by time we are done (memory).
+	Output("storedSymbols","data"),
+	
 	Output('tickerAdd-button', "n_clicks"),
 	Output("portfolioAdd-button", "n_clicks"),
 	Output("removeSelected-button","n_clicks"),
-	Output("symbolStore", 'data'),
-
-
-	Input("tickerAdd-button", "n_clicks"),
-	Input("portfolioAdd-button", "n_clicks"),
-	Input("removeSelected-button", "n_clicks"),
+	Output("symbolCurStore","data"),
+	
+	
+	
+	
 	Input('ticker-selector', 'options'),
 	Input('api-entry','value'),
 	Input('portfolio-entry','value'),
+
 	Input('tickerAdd-entry','value'),
 	Input('ticker-selector', 'value'),
-	Input("localStore", 'data'),)
-def on_button_click(nTB,nGB,nRB,prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicker,curGrpMem):
-	# state 1: if portfolio add
-	# global groupDicts
-	storedSymbol = selectedTicker
-	if nGB == 1:
-		try:
-			newTickers = getTickersFromPortfolio(uPort,uAPIKEY)
-			# see if we have some already, a dict entry may not exist
-			try:
-				cTickers = groupDicts[curGrpMem][0]
-				cTickers = cTickers + newTickers
-			except:
-				cTickers = newTickers
 	
-			# for i in np.arange(0,len(prevOpts)):
-			# 	cTickers.append(prevOpts[i]['label'])
-			# dedupe
-			cTickers=list(dict.fromkeys(cTickers))
-			newOptions=[{'label': x, 'value': x} for x in cTickers]
+	Input("currentGroup", 'data'),
+	Input("storedSymbols","data"),
+	
+	Input("tickerAdd-button", "n_clicks"),
+	Input("portfolioAdd-button", "n_clicks"),
+	Input("removeSelected-button", "n_clicks"))
 
-			
-			try:
-				
-				groupDicts[curGrpMem][0]=cTickers
-			except:
-				
-				groupDicts.update({curGrpMem:[cTickers,[],[]]})
-				
-		except:
-			
-			newOptions = prevOpts
+def on_button_click(prevOpts,uAPIKEY,uPort,tickerToAdd,selectedTicker,curGrpMem,curGrpSymbolsInMem,nTB,nGB,nRB):
+
+	# default is initialization, checks, or change
+	# let's always populate the list based on current group
+	# we can just overwrite prevOpts
+	# if it fails it is because we don't have symbols for the group, so we make them here.
+	desiredTicker = selectedTicker
+	
+	try:
+		newOptions=[{'label': x, 'value': x} for x in curGrpSymbolsInMem[curGrpMem]]
+		# set the value of the display to first in group
+		selectedTicker = curGrpSymbolsInMem[curGrpMem][0]
+
+	except:
+		curGrpSymbolsInMem.update({curGrpMem:[]})
+		newOptions=[{'label': x, 'value': x} for x in curGrpSymbolsInMem[curGrpMem]]
+		# set the value of the display to first in group
+
+		
+
+	# state 1: is portfolio add
+	if nGB == 1:
+		# don't think we need try: because it will always have null (see default)
+		# combine new and old
+		newTickers = getTickersFromPortfolio(uPort,uAPIKEY)
+		cTickers = curGrpSymbolsInMem[curGrpMem] + newTickers
+		# dedupe
+		cTickers=list(dict.fromkeys(cTickers))
+		# set new options
+		newOptions=[{'label': x, 'value': x} for x in cTickers]
+		# update memory
+		curGrpSymbolsInMem[curGrpMem]=cTickers
+		# set the value of the display to first in group
+		selectedTicker = curGrpSymbolsInMem[curGrpMem][0]
+
+	# state 2: is button add
 	elif nTB == 1:
-		
-		try:
-			# see if we have some already
-			try:
-				cTickers = groupDicts[curGrpMem][0]
-			except:
-				cTickers = []
-			for i in np.arange(0,len(prevOpts)):
-				cTickers.append(prevOpts[i]['label'])
-			# now add new 
-			cTickers = cTickers + [str(tickerToAdd).upper()]
-			# dedupe
-			cTickers=list(dict.fromkeys(cTickers))
-			newOptions=[{'label': x, 'value': x} for x in cTickers]
-			try:
-				groupDicts[curGrpMem][0]=cTickers
-			except:
-				groupDicts.update({curGrpMem:[cTickers,[],[]]})
+		newTickers = [str(tickerToAdd).upper()]
+		cTickers = curGrpSymbolsInMem[curGrpMem] + newTickers
+		# dedupe
+		cTickers=list(dict.fromkeys(cTickers))
+		# set new options
+		newOptions=[{'label': x, 'value': x} for x in cTickers]
+		# update memory
+		curGrpSymbolsInMem[curGrpMem]=cTickers
+		# set the value of the display to first in group
+		selectedTicker = curGrpSymbolsInMem[curGrpMem][0]
 
-		except:
-			
-			newOptions = prevOpts
+	# state 3: is remove ticker
 	elif nRB == 1:
+		removeTickers = [str(tickerToAdd).upper()]
+		cTickers = list(set(curGrpSymbolsInMem[curGrpMem])-set(removeTickers))
+		# dedupe
+		cTickers=list(dict.fromkeys(cTickers))
+		# set new options
+		newOptions=[{'label': x, 'value': x} for x in cTickers]
+		# update memory
+		curGrpSymbolsInMem[curGrpMem]=cTickers
+		# set the value of the display to first in group
+		selectedTicker = curGrpSymbolsInMem[curGrpMem][0]
 		
-		try:
-			cTickers = []
-			for i in np.arange(0,len(prevOpts)):
-				if prevOpts[i]['label'] != selectedTicker:
-					cTickers.append(prevOpts[i]['label'])
-			# now remove new 
-			newOptions=[{'label': x, 'value': x} for x in cTickers]
-			try:
-				groupDicts[curGrpMem][0]=cTickers
-			except:
-				groupDicts.update({curGrpMem:[cTickers,[],[]]})
-		except:
-			
-			newOptions = prevOpts
-	else:
-		try:
-			cTickers = groupDicts[curGrpMem][0]
-			newOptions=[{'label': x, 'value': x} for x in cTickers]
-		except:
-			newOptions = prevOpts
+	print('i think it is {}'.format(desiredTicker))
 	nGB=0
 	nTB=0
 	nRB=0
-	myAPI = uAPIKEY
-	return newOptions,nTB,nGB,nRB,storedSymbol
+
+	return newOptions,selectedTicker,curGrpSymbolsInMem,nTB,nGB,nRB,desiredTicker
 
 
 ###################################
 #### Get Data Callback ####
 ###################################
 
-@app.callback(Output('getData-button', "n_clicks"),
+# dcc.Store(id='dataDictStore', storage_type='memory',data = {defaultGroupName:[defaultSymbols,[],defaultInstruments,defaultIndustryID]}),
+
+@app.callback(
+	Output('getData-button', "n_clicks"),
 	Output("dataDictStore", 'data'),
-	Input("lastGroup", 'data'),
 	Input("dataDictStore", 'data'),
-	Input("localStore", 'data'),
+	Input("lastGroup", 'data'),
+	Input("currentGroup", 'data'),
+	Input("storedSymbols","data"),
 	Input('monthData_switch', "value"),
-	Input('getData-button', "n_clicks"),
-	Input('api-entry','value'),prevent_initial_call=True)
-def getSLData(prevGrp,storedData,strGrp,uMnth,gdB,curAPI):	
-	# global groupDicts
+	Input('api-entry','value'),
+	Input('getData-button', "n_clicks"),prevent_initial_call=True)
 
-	# if we change groups, then let's try to get new data buffer if one exists.
-
-	if prevGrp != strGrp:
-		try:
-			if len(groupDicts[strGrp][1])>0:
-				storedData={strGrp:[groupDicts[strGrp][0],groupDicts[strGrp][1].to_json(),groupDicts[strGrp][2]]}
-		except:
-			1+1
-
+def getSLData(storedData,prevGrp,strGrp,storedTickers,uMnth,curAPI,gdB):	
+	# if we press the button then gdB==1
 	if gdB!=0:
-		ctickers = groupDicts[strGrp][0]
-		if len(ctickers)>0:
-			totalData = getTickerDataFromSL('{}'.format(ctickers[0]),curAPI,uMnth)			
-			if len(ctickers)>1:
-				for i in np.arange(1,len(ctickers)):
-					totalData=pd.concat([totalData,getTickerDataFromSL('{}'.format(ctickers[i]),curAPI,uMnth)], axis=1)
+		
+		macroSymbols = storedTickers['macroDefault']
+		groupSymbols = storedTickers[strGrp]
+		macroInstruments = storedData['macroDefault'][2]
+		# todo: stream instruments
+		groupInstruments = []
+		
+		# this grabs new data for the current group
+		if len(groupSymbols)>0:
+			totalData = getTickerDataFromSL('{}'.format(groupSymbols[0]),curAPI,uMnth)			
+			if len(groupSymbols)>1:
+				for i in np.arange(1,len(groupSymbols)):
+					totalData=pd.concat([totalData,getTickerDataFromSL('{}'.format(groupSymbols[i]),curAPI,uMnth)], axis=1)
 					totalData=totalData.fillna(method='ffill')
 					totalData=totalData.fillna(method='bfill')
+					# todo: make sleep time adjustable
 					time.sleep(0.5) 
-		groupDicts.update({strGrp:[ctickers,totalData,[]]})
-		techMetricData = calculateTechMetrics(groupDicts,strGrp,10)
-		groupDicts[strGrp][1]=pd.concat([groupDicts[strGrp][1], techMetricData], axis=1)	
-		techScoreData = scoreTechMetrics(groupDicts,strGrp,10)
 		
-		try:
-			groupDicts[strGrp][1]=pd.concat([groupDicts[strGrp][1], techScoreData], axis=1)
-			try:
-				groupDicts[strGrp][1]=discountTechMetrics(groupDicts,strGrp,10)
-			except:
-				print('problem discounting')
-		except:
-			print('error with scoring')
-		
-		
-		retData={strGrp:[ctickers,groupDicts[strGrp][1].to_json(),[]]}
+		# now we score, but we need the macroDefault data, if we aren't group macroDefault
+		if strGrp == 'macroDefault':
+			techMetricData = calculateTechMetrics(totalData,totalData,groupSymbols,10)
+			totalData = pd.concat([totalData,techMetricData], axis=1)
+			techScoreData = scoreTechMetrics(totalData,totalData,groupSymbols,macroInstruments,10)
+			totalData = pd.concat([totalData,techScoreData], axis=1)
+			totalData=discountTechMetrics(totalData,totalData,groupSymbols,macroSymbols,10)
+		else:
+			macroScoreData = pd.read_json(storedData['macroDefault'][1]).tz_convert('US/Eastern')
+			
+			techMetricData = calculateTechMetrics(totalData,macroScoreData,groupSymbols,10)
+			totalData = pd.concat([totalData,techMetricData], axis=1)
+			techScoreData = scoreTechMetrics(totalData,macroScoreData,groupSymbols,groupInstruments,10)
+			totalData = pd.concat([totalData,techScoreData], axis=1)
+			totalData=discountTechMetrics(totalData,macroScoreData,groupSymbols,macroSymbols,10)
+			# totalData=discountTechMetrics(totalData,macroScoreData,storedTickers,macroStrs,10)
 
-		
-		storedData = retData
-		# print(groupDicts[strGrp][1].info(verbose=True))
+		# print(totalData.to_json())
+		# {defaultGroupName:[defaultGroupName,[],defaultInstruments]}
+		storedData.update({strGrp:[storedTickers[strGrp],totalData.to_json(date_unit="ms",date_format='iso'),[],[]]})
 		
 	gdB=0
 	return gdB,storedData
