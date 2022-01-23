@@ -2,7 +2,7 @@
 ########################################################################
 ########################################################################
 ####																####
-####    slAIDevel v0.39e											####
+####    slAIDevel v0.39f											####
 ####																####
 ####    The development module for testing new AI/Data Science		####
 ####    features/extensions for Stocklabs.							####
@@ -630,9 +630,9 @@ def make_corMat(mpN,grpStr,cData):
 	# this should plot whatever is in the buffer.
 	if mpN != 0:
 		# your group may be lost
-		realKey = list(dict.fromkeys(cData))[0]
-		aData=pd.read_json(cData[realKey][1])
-		cTickers=cData[realKey][0]
+		# realKey = list(dict.fromkeys(cData))[0]
+		aData=pd.read_json(cData[localStore][1])
+		cTickers=cData[localStore][0]
 		procList=addProcedureToTickerList(cTickers,'_avg')
 		mfig = px.imshow(aData[procList].corr())
 
@@ -649,9 +649,9 @@ def make_corMat2(mpN,grpStr,cData):
 	# this should plot whatever is in the buffer.
 	if mpN != 0:
 		# your group may be lost
-		realKey = list(dict.fromkeys(cData))[0]
-		aData=pd.read_json(cData[realKey][1])
-		cTickers=cData[realKey][0]
+		# realKey = list(dict.fromkeys(cData))[0]
+		aData=pd.read_json(cData[localStore][1])
+		cTickers=cData[localStore][0]
 		procList=addProcedureToTickerList(cTickers,'_avg')
 		mfig = px.imshow(aData[procList].corr())
 
@@ -668,9 +668,9 @@ def make_corMat2(mpN,grpStr,cData):
 	Input("dataDictStore", 'data'))
 def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStrA,cData):	
 	try:
-		realKey = list(dict.fromkeys(cData))[0]
-		aData=pd.read_json(cData[realKey][1])
-		cTickers=cData[realKey][0]
+		# realKey = list(dict.fromkeys(cData))[0]
+		aData=pd.read_json(cData[localStore][1])
+		cTickers=cData[localStore][0]
 
 		if plotWSmooth ==0:
 			smoothBin = 0
@@ -690,9 +690,9 @@ def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStrA,cDa
 	Input("dataDictStore", 'data'))
 def plot_tickerValues2(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStrA,cData):	
 	try:
-		realKey = list(dict.fromkeys(cData))[0]
-		aData=pd.read_json(cData[realKey][1])
-		cTickers=cData[realKey][0]
+		# realKey = list(dict.fromkeys(cData))[0]
+		aData=pd.read_json(cData[localStore][1])
+		cTickers=cData[localStore][0]
 
 		if plotWSmooth ==0:
 			smoothBin = 0
