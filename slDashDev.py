@@ -2,7 +2,7 @@
 ########################################################################
 ########################################################################
 ####																####
-####    slAIDevel v0.39f											####
+####    slAIDevel v0.39g											####
 ####																####
 ####    The development module for testing new AI/Data Science		####
 ####    features/extensions for Stocklabs.							####
@@ -631,8 +631,8 @@ def make_corMat(mpN,grpStr,cData):
 	if mpN != 0:
 		# your group may be lost
 		# realKey = list(dict.fromkeys(cData))[0]
-		aData=pd.read_json(cData[localStore][1])
-		cTickers=cData[localStore][0]
+		aData=pd.read_json(cData[grpStr][1])
+		cTickers=cData[grpStr][0]
 		procList=addProcedureToTickerList(cTickers,'_avg')
 		mfig = px.imshow(aData[procList].corr())
 
@@ -650,8 +650,8 @@ def make_corMat2(mpN,grpStr,cData):
 	if mpN != 0:
 		# your group may be lost
 		# realKey = list(dict.fromkeys(cData))[0]
-		aData=pd.read_json(cData[localStore][1])
-		cTickers=cData[localStore][0]
+		aData=pd.read_json(cData[grpStr][1])
+		cTickers=cData[grpStr][0]
 		procList=addProcedureToTickerList(cTickers,'_avg')
 		mfig = px.imshow(aData[procList].corr())
 
@@ -669,8 +669,8 @@ def make_corMat2(mpN,grpStr,cData):
 def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStrA,cData):	
 	try:
 		# realKey = list(dict.fromkeys(cData))[0]
-		aData=pd.read_json(cData[localStore][1])
-		cTickers=cData[localStore][0]
+		aData=pd.read_json(cData[grpStr][1])
+		cTickers=cData[grpStr][0]
 
 		if plotWSmooth ==0:
 			smoothBin = 0
@@ -691,8 +691,8 @@ def plot_tickerValues(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStrA,cDa
 def plot_tickerValues2(gVal,plotWDate,plotWSmooth,smoothBin,curTicker,grpStrA,cData):	
 	try:
 		# realKey = list(dict.fromkeys(cData))[0]
-		aData=pd.read_json(cData[localStore][1])
-		cTickers=cData[localStore][0]
+		aData=pd.read_json(cData[grpStr][1])
+		cTickers=cData[grpStr][0]
 
 		if plotWSmooth ==0:
 			smoothBin = 0
